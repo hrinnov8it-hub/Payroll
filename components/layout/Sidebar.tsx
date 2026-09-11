@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/ui/Logo';
+import { createClient } from '@/lib/supabase/client';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -12,6 +13,31 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
+  const [userEmail, setUserEmail] = useState<string>('Innov8IT Administrator');
+  const [userInitials, setUserInitials] = useState<string>('IN8');
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) {
+        setUserEmail(user.email);
+        const namePart = user.email.split('@')[0];
+        setUserInitials(namePart.slice(0, 2).toUpperCase());
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.email) {
+        setUserEmail(session.user.email);
+        const namePart = session.user.email.split('@')[0];
+        setUserInitials(namePart.slice(0, 2).toUpperCase());
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const navItems = [
     {
@@ -138,10 +164,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="user-avatar">IN8</div>
+          <div className="user-avatar">{userInitials}</div>
           <div className="user-info">
-            <span className="user-name">Innov8IT Administrator</span>
-            <span className="user-role">Superuser</span>
+            <span className="user-name" title={userEmail}>{userEmail}</span>
+            <span className="user-role">Authenticated</span>
           </div>
         </div>
       </aside>

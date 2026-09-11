@@ -1,8 +1,10 @@
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { createClient } from '@/lib/supabase/client';
 
 interface TopNavProps {
   onToggleSidebar: () => void;
@@ -13,6 +15,41 @@ export const TopNav: React.FC<TopNavProps> = ({
   onToggleSidebar,
   title = 'Dashboard',
 }) => {
+  const router = useRouter();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) {
+        setUserEmail(user.email);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserEmail(session?.user?.email ?? null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleSignOut = async () => {
+    setIsLoggingOut(true);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push('/login');
+      router.refresh();
+    } catch {
+      window.location.href = '/login';
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -35,19 +72,25 @@ export const TopNav: React.FC<TopNavProps> = ({
       </div>
 
       <div className="topbar-right">
-        <Badge variant="brand" dot>
-          Phase 2 • Design System Finalized
-        </Badge>
-
-        <div className="topbar-actions">
-          <Link href="/(auth)/login" className="icon-btn" title="View Login Screen">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-              <polyline points="10 17 15 12 10 7" />
-              <line x1="15" x2="3" y1="12" y2="12" />
-            </svg>
-          </Link>
-        </div>
+        {userEmail ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Badge variant="brand" dot>
+              {userEmail}
+            </Badge>
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={handleSignOut}
+              isLoading={isLoggingOut}
+            >
+              Sign Out
+            </Button>
+          </div>
+        ) : (
+          <Badge variant="brand" dot>
+            Payroll System Active
+          </Badge>
+        )}
       </div>
     </header>
   );
