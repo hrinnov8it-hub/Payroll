@@ -15,7 +15,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const navItems = [
     {
-      title: 'Main Navigation',
+      title: 'Main',
       items: [
         {
           name: 'Dashboard',
@@ -33,12 +33,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       ],
     },
     {
-      title: 'Payroll Modules (Planned)',
+      title: 'Payroll Modules',
       items: [
         {
           name: 'Employees',
           href: '#',
-          badge: 'Phase 4',
+          badge: null,
           icon: (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -49,9 +49,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           ),
         },
         {
-          name: 'Attendance',
+          name: 'Attendance & DTR',
           href: '#',
-          badge: 'Phase 6',
+          badge: null,
           icon: (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
@@ -62,10 +62,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         {
           name: 'Payroll Runs',
           href: '#',
-          badge: 'Phase 8',
+          badge: null,
           icon: (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" x2="12" y1="2" y2="22" />
+              <line x1="12" y1="2" x2="12" y2="22" />
               <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
           ),
@@ -73,7 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         {
           name: 'Payslips',
           href: '#',
-          badge: 'Phase 10',
+          badge: null,
           icon: (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -85,9 +85,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           ),
         },
         {
-          name: 'Reports',
+          name: 'Reports & Compliance',
           href: '#',
-          badge: 'Phase 12',
+          badge: null,
           icon: (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" x2="18" y1="20" y2="10" />
