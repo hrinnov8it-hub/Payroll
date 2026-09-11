@@ -76,7 +76,7 @@ function LoginForm() {
           label="Work Email Address"
           type="email"
           id="login-email"
-          placeholder="admin@innov8it.com"
+          placeholder="hr.innov8it@gmail.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
