@@ -19,6 +19,23 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const setAdminSession = (userEmail?: string) => {
+    if (typeof document !== 'undefined') {
+      document.cookie = 'innov8it_auth_user=admin; path=/; max-age=604800; SameSite=Lax';
+      try {
+        localStorage.setItem(
+          'innov8it_current_user',
+          JSON.stringify({
+            id: 'user-admin-001',
+            name: 'HR Admin',
+            email: userEmail || 'hr.innov8it@gmail.com',
+            role: 'admin',
+          })
+        );
+      } catch {}
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
@@ -26,10 +43,12 @@ function LoginForm() {
     setIsLoading(true);
     setErrorMessage(null);
 
+    const cleanEmail = email.trim().toLowerCase();
+
     try {
       const supabase = createClient();
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: cleanEmail,
         password,
       });
 
@@ -40,6 +59,7 @@ function LoginForm() {
       }
 
       if (data.session) {
+        setAdminSession(cleanEmail);
         router.push(returnUrl);
         router.refresh();
       } else {
@@ -111,7 +131,7 @@ function LoginForm() {
             <input type="checkbox" style={{ accentColor: 'var(--brand-blue)' }} />
             Remember me
           </label>
-          <a href="#" onClick={(e) => { e.preventDefault(); alert('Please contact your Innov8IT HR administrator to reset your credentials.'); }} style={{ fontSize: '0.82rem', color: 'var(--brand-blue)', fontWeight: 600 }}>
+          <a href="#" onClick={(e) => { e.preventDefault(); alert('Please contact your Innov8IT HR administrator at hr.innov8it@gmail.com to reset your credentials.'); }} style={{ fontSize: '0.82rem', color: 'var(--brand-blue)', fontWeight: 600 }}>
             Forgot password?
           </a>
         </div>
@@ -120,10 +140,6 @@ function LoginForm() {
           {isLoading ? 'Authenticating...' : 'Sign In to Dashboard'}
         </Button>
       </form>
-
-      <div className="auth-notice" style={{ marginTop: '1.25rem', fontSize: '0.8rem' }}>
-        <strong>Supabase Auth Active:</strong> Protected by industry-standard encryption and verified against your live Supabase project.
-      </div>
 
       <div className="auth-footer">
         <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>

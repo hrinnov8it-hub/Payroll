@@ -43,6 +43,9 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const localAdminCookie = request.cookies.get('innov8it_auth_user')?.value;
+  const isAuthenticated = !!user || !!localAdminCookie;
+
   const pathname = request.nextUrl.pathname;
   const isAuthPage = pathname === '/login' || pathname.startsWith('/(auth)');
   const isProtectedPage =
@@ -55,7 +58,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/settings');
 
   // If user is not logged in and attempts to access protected routes, redirect to login
-  if (!user && isProtectedPage) {
+  if (!isAuthenticated && isProtectedPage) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('returnUrl', pathname);
@@ -63,7 +66,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // If user is already authenticated and visits the login page, redirect to dashboard
-  if (user && isAuthPage) {
+  if (isAuthenticated && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);

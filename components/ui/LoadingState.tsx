@@ -68,3 +68,37 @@ export const TableSkeleton: React.FC<{ rows?: number; cols?: number }> = ({
     ))}
   </div>
 );
+
+export interface LoadingStateProps {
+  title?: string;
+  message?: string;
+  className?: string;
+}
+
+export const LoadingState: React.FC<LoadingStateProps> = ({
+  title = 'Loading...',
+  message,
+  className = '',
+}) => (
+  <div
+    className={className}
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      textAlign: 'center',
+      padding: '3rem 1.5rem',
+      gap: '0.85rem',
+    }}
+  >
+    <Spinner size="lg" />
+    <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--brand-dark-blue)' }}>{title}</h4>
+    {message && (
+      <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)', maxWidth: '400px' }}>
+        {message}
+      </p>
+    )}
+  </div>
+);
+

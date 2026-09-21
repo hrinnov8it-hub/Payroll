@@ -23,56 +23,12 @@ interface PayrollSummary {
   payoutDate: string;
 }
 
-const mockPayrollRuns: PayrollSummary[] = [
-  {
-    id: 'PR-2026-09A',
-    period: 'Sep 1 – 15, 2026',
-    cycle: '1st Half (15th)',
-    headcount: 24,
-    grossPay: '₱786,450.00',
-    deductions: '₱102,200.00',
-    netPay: '₱684,250.00',
-    status: 'draft',
-    payoutDate: 'Sep 15, 2026',
-  },
-  {
-    id: 'PR-2026-08B',
-    period: 'Aug 16 – 31, 2026',
-    cycle: '2nd Half (End-month)',
-    headcount: 24,
-    grossPay: '₱780,100.00',
-    deductions: '₱100,980.00',
-    netPay: '₱679,120.00',
-    status: 'disbursed',
-    payoutDate: 'Aug 31, 2026',
-  },
-  {
-    id: 'PR-2026-08A',
-    period: 'Aug 1 – 15, 2026',
-    cycle: '1st Half (15th)',
-    headcount: 23,
-    grossPay: '₱750,500.00',
-    deductions: '₱97,700.00',
-    netPay: '₱652,800.00',
-    status: 'disbursed',
-    payoutDate: 'Aug 15, 2026',
-  },
-  {
-    id: 'PR-2026-07B',
-    period: 'Jul 16 – 31, 2026',
-    cycle: '2nd Half (End-month)',
-    headcount: 23,
-    grossPay: '₱748,900.00',
-    deductions: '₱96,400.00',
-    netPay: '₱652,500.00',
-    status: 'disbursed',
-    payoutDate: 'Jul 31, 2026',
-  },
-];
+// No mock data — data will be loaded from Supabase
+const payrollRuns: PayrollSummary[] = [];
 
 export default function DashboardPage() {
   const [isNewRunModalOpen, setIsNewRunModalOpen] = useState(false);
-  const [newRunPeriod, setNewRunPeriod] = useState('2026-09-16-to-30');
+  const [newRunPeriod, setNewRunPeriod] = useState('');
   const [newRunCycle, setNewRunCycle] = useState('semi-monthly');
 
   const getStatusBadge = (status: PayrollSummary['status']) => {
@@ -130,10 +86,10 @@ export default function DashboardPage() {
               </svg>
             </div>
           </div>
-          <div className="stat-value">24</div>
+          <div className="stat-value">0</div>
           <div className="stat-subtext">
-            <Badge variant="success" dot>100% Active</Badge>
-            <span>4 Teams / Depts</span>
+            <Badge variant="info" dot>No Data Yet</Badge>
+            <span>Add employees to get started</span>
           </div>
         </div>
 
@@ -149,10 +105,10 @@ export default function DashboardPage() {
               </svg>
             </div>
           </div>
-          <div className="stat-value" style={{ fontSize: '1.45rem' }}>Sep 1 – 15, 2026</div>
+          <div className="stat-value" style={{ fontSize: '1.45rem' }}>—</div>
           <div className="stat-subtext">
-            <Badge variant="brand">Semi-Monthly</Badge>
-            <span>Cutoff 1</span>
+            <Badge variant="info">Not Set</Badge>
+            <span>No active cutoff period</span>
           </div>
         </div>
 
@@ -166,10 +122,9 @@ export default function DashboardPage() {
               </svg>
             </div>
           </div>
-          <div className="stat-value number-mono">₱684,250.00</div>
+          <div className="stat-value number-mono">₱0.00</div>
           <div className="stat-subtext">
-            <span style={{ color: 'var(--brand-accent)', fontWeight: 700 }}>Payout Date:</span>
-            <span>Sep 15, 2026</span>
+            <span style={{ color: 'var(--text-muted)' }}>No payroll runs yet</span>
           </div>
         </div>
 
@@ -199,57 +154,73 @@ export default function DashboardPage() {
               <CardTitle>Payroll History & Active Runs</CardTitle>
               <CardSubtitle>Recent semi-monthly cutoff periods, gross amounts, and net payout totals</CardSubtitle>
             </div>
-            <Badge variant="brand-dark">4 Cutoffs Recorded</Badge>
+            <Badge variant="brand-dark">{payrollRuns.length} Cutoffs Recorded</Badge>
           </CardHeader>
           <CardBody style={{ padding: 0 }}>
-            <TableContainer style={{ border: 'none' }}>
-              <Table hoverable>
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell>Cutoff Period</TableHeaderCell>
-                    <TableHeaderCell>Headcount</TableHeaderCell>
-                    <TableHeaderCell>Gross Pay</TableHeaderCell>
-                    <TableHeaderCell>Deductions</TableHeaderCell>
-                    <TableHeaderCell>Net Payout</TableHeaderCell>
-                    <TableHeaderCell>Status</TableHeaderCell>
-                    <TableHeaderCell style={{ textAlign: 'right' }}>Actions</TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {mockPayrollRuns.map((run) => (
-                    <TableRow key={run.id}>
-                      <TableCell>
-                        <strong>{run.period}</strong>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                          {run.cycle} • Payout: {run.payoutDate}
-                        </div>
-                      </TableCell>
-                      <TableCell>{run.headcount} Staff</TableCell>
-                      <TableCell className="number-mono" style={{ fontWeight: 600 }}>
-                        {run.grossPay}
-                      </TableCell>
-                      <TableCell className="number-mono" style={{ color: 'var(--danger)', fontWeight: 600 }}>
-                        -{run.deductions}
-                      </TableCell>
-                      <TableCell className="number-mono" style={{ fontWeight: 700, color: 'var(--brand-dark-blue)' }}>
-                        {run.netPay}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(run.status)}</TableCell>
-                      <TableCell style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', gap: '6px' }}>
-                          <Button variant="outline" size="xs">
-                            View Run
-                          </Button>
-                          <Button variant="ghost" size="xs">
-                            Payslips
-                          </Button>
-                        </div>
-                      </TableCell>
+            {payrollRuns.length === 0 ? (
+              <div style={{
+                padding: '3rem 2rem',
+                textAlign: 'center',
+                color: 'var(--text-muted)',
+                fontSize: '0.9rem',
+              }}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ margin: '0 auto 1rem', display: 'block', opacity: 0.4 }}>
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+                <p style={{ margin: 0, fontWeight: 600 }}>No payroll runs yet</p>
+                <p style={{ margin: '0.25rem 0 0' }}>Click <strong>Process New Payroll</strong> to create your first run.</p>
+              </div>
+            ) : (
+              <TableContainer style={{ border: 'none' }}>
+                <Table hoverable>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>Cutoff Period</TableHeaderCell>
+                      <TableHeaderCell>Headcount</TableHeaderCell>
+                      <TableHeaderCell>Gross Pay</TableHeaderCell>
+                      <TableHeaderCell>Deductions</TableHeaderCell>
+                      <TableHeaderCell>Net Payout</TableHeaderCell>
+                      <TableHeaderCell>Status</TableHeaderCell>
+                      <TableHeaderCell style={{ textAlign: 'right' }}>Actions</TableHeaderCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {payrollRuns.map((run) => (
+                      <TableRow key={run.id}>
+                        <TableCell>
+                          <strong>{run.period}</strong>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                            {run.cycle} • Payout: {run.payoutDate}
+                          </div>
+                        </TableCell>
+                        <TableCell>{run.headcount} Staff</TableCell>
+                        <TableCell className="number-mono" style={{ fontWeight: 600 }}>
+                          {run.grossPay}
+                        </TableCell>
+                        <TableCell className="number-mono" style={{ color: 'var(--danger)', fontWeight: 600 }}>
+                          -{run.deductions}
+                        </TableCell>
+                        <TableCell className="number-mono" style={{ fontWeight: 700, color: 'var(--brand-dark-blue)' }}>
+                          {run.netPay}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(run.status)}</TableCell>
+                        <TableCell style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', gap: '6px' }}>
+                            <Button variant="outline" size="xs">
+                              View Run
+                            </Button>
+                            <Button variant="ghost" size="xs">
+                              Payslips
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
           </CardBody>
           <CardFooter>
             <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
@@ -267,61 +238,85 @@ export default function DashboardPage() {
             </CardHeader>
             <CardBody>
               <div className="quick-actions-grid">
-                <div className="quick-action-item">
-                  <div className="quick-action-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                      <circle cx="9" cy="7" r="4" />
-                      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
+                <Link href="/employees" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <div className="quick-action-item">
+                    <div className="quick-action-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Employee Roster</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Manage Employees • Rates & Info</div>
+                    </div>
                   </div>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Employee Roster</div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>24 Employees • Rates & Info</div>
-                  </div>
-                </div>
+                </Link>
 
-                <div className="quick-action-item">
-                  <div className="quick-action-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
+                <Link href="/attendance" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <div className="quick-action-item">
+                    <div className="quick-action-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Attendance & DTR</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Timesheets, Overtime, Leaves</div>
+                    </div>
                   </div>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Attendance & DTR</div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Timesheets, Overtime, Leaves</div>
-                  </div>
-                </div>
+                </Link>
 
-                <div className="quick-action-item">
-                  <div className="quick-action-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="12" y1="2" x2="12" y2="22" />
-                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                    </svg>
+                <Link href="/payroll-runs" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <div className="quick-action-item">
+                    <div className="quick-action-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="12" y1="2" x2="12" y2="22" />
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Payroll Processing</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Calculation, Review & Approval</div>
+                    </div>
                   </div>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Payroll Processing</div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Calculation, Review & Approval</div>
-                  </div>
-                </div>
+                </Link>
 
-                <div className="quick-action-item">
-                  <div className="quick-action-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                      <line x1="16" x2="8" y1="13" y2="13" />
-                      <line x1="16" x2="8" y1="17" y2="17" />
-                    </svg>
+                <Link href="/payslips" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <div className="quick-action-item">
+                    <div className="quick-action-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" x2="8" y1="13" y2="13" />
+                        <line x1="16" x2="8" y1="17" y2="17" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Employee Payslips</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>PDF Generation & Distribution</div>
+                    </div>
                   </div>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Employee Payslips</div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>PDF Generation & Distribution</div>
+                </Link>
+
+                <Link href="/reports" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <div className="quick-action-item">
+                    <div className="quick-action-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" x2="18" y1="20" y2="10" />
+                        <line x1="12" x2="12" y1="20" y2="4" />
+                        <line x1="6" x2="6" y1="20" y2="14" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Reports & Compliance</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Audit summaries & Statutory schedules</div>
+                    </div>
                   </div>
-                </div>
+                </Link>
               </div>
             </CardBody>
           </Card>
@@ -386,8 +381,9 @@ export default function DashboardPage() {
             value={newRunPeriod}
             onChange={(e) => setNewRunPeriod(e.target.value)}
             options={[
-              { value: '2026-09-16-to-30', label: 'September 16 – 30, 2026 (Upcoming)' },
-              { value: '2026-09-01-to-15', label: 'September 1 – 15, 2026 (Current Draft)' },
+              { value: '', label: '— Select a cutoff period —' },
+              { value: '2026-09-16-to-30', label: 'September 16 – 30, 2026' },
+              { value: '2026-09-01-to-15', label: 'September 1 – 15, 2026' },
               { value: '2026-10-01-to-15', label: 'October 1 – 15, 2026' },
             ]}
             helperText="The start and end dates for time logs and attendance calculation"
@@ -407,7 +403,7 @@ export default function DashboardPage() {
           <div style={{ background: '#f8fafc', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
             <strong>Payroll Run Highlights:</strong>
             <ul style={{ margin: '6px 0 0 18px', color: 'var(--text-muted)' }}>
-              <li>Includes 24 active employees from all departments</li>
+              <li>Includes all active employees from the roster</li>
               <li>Calculates statutory contributions (SSS, PhilHealth, Pag-IBIG)</li>
               <li>Computes BIR progressive withholding tax based on taxable income</li>
               <li>Computes overtime hours, night differentials, and holiday rates</li>
