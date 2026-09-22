@@ -7,11 +7,80 @@ import {
 } from '@/types/payslip';
 import { getPayrollRuns, getPayrollRunById } from '@/lib/payroll/runs-actions';
 import { getItemizedDeductions } from '@/lib/payroll/item-deductions';
+import { fallbackPayrollRuns } from '@/lib/payroll/mock-runs';
 
 /**
  * Seed / Mock Payslips for demonstration, development, and offline mode
  */
-export const SEED_PAYSLIPS: Payslip[] = [];
+export const SEED_PAYSLIPS: Payslip[] = (fallbackPayrollRuns[0]?.items || []).map((item, index) => {
+  const run = fallbackPayrollRuns[0];
+  const period = run.payroll_period!;
+  const itemDed = getItemizedDeductions(item);
+
+  return {
+    id: `ps-seed-${(index + 1).toString().padStart(3, '0')}`,
+    payroll_run_id: run.id,
+    payroll_run_item_id: item.id,
+    employee_id: item.employee_id,
+    payslip_number: `PS-202609-01-${(index + 1).toString().padStart(3, '0')}`,
+    status: 'published',
+    issue_date: '2026-09-15',
+    viewed_at: null,
+    notes: 'Approved semi-monthly payroll distribution',
+    created_at: '2026-09-15T08:30:00.000Z',
+    updated_at: '2026-09-15T08:30:00.000Z',
+
+    employee_name: item.employee_name_snapshot,
+    employee_number: item.employee_number_snapshot,
+    employee_email: `${item.employee_name_snapshot.toLowerCase().replace(/ /g, '.')}@innov8it.ph`,
+    department: item.department_snapshot,
+    position: item.position_snapshot,
+    pay_type: item.pay_type_snapshot,
+    basic_salary: item.basic_salary_snapshot,
+    hourly_rate: item.hourly_rate_snapshot,
+
+    period_id: period.id,
+    period_name: period.name,
+    period_start: period.start_date,
+    period_end: period.end_date,
+    payout_date: period.payout_date,
+    run_number: run.run_number,
+
+    days_worked: item.days_worked,
+    regular_hours: item.regular_hours,
+    overtime_hours: item.overtime_hours,
+    night_diff_hours: item.night_diff_hours,
+    holiday_regular_hours: item.holiday_regular_hours,
+    holiday_special_hours: item.holiday_special_hours,
+    rest_day_hours: item.rest_day_hours,
+    late_minutes: item.late_minutes,
+    undertime_minutes: item.undertime_minutes,
+    absent_days: item.absent_days,
+
+    basic_pay: item.basic_pay,
+    overtime_pay: item.overtime_pay,
+    night_diff_pay: item.night_diff_pay,
+    holiday_pay: item.holiday_pay,
+    rest_day_pay: item.rest_day_pay,
+    allowances: item.allowances,
+    bonuses: item.bonuses,
+    other_earnings: 0,
+    gross_pay: item.gross_pay,
+
+    late_deduction: itemDed.late.amount,
+    undertime_deduction: itemDed.undertime.amount,
+    absence_deduction: itemDed.absence.amount,
+    sss_deduction: itemDed.sss.amount,
+    philhealth_deduction: itemDed.philhealth.amount,
+    pagibig_deduction: itemDed.pagibig.amount,
+    tax_deduction: itemDed.tax.amount,
+    other_deductions: itemDed.other.amount,
+    other_deductions_list: itemDed.other.list,
+    total_deductions: itemDed.totalDeductions,
+
+    net_pay: item.net_pay,
+  };
+});
 
 // Local in-memory cache for payslips
 let localPayslipsCache: Payslip[] = [...SEED_PAYSLIPS];

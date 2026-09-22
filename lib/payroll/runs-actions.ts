@@ -46,8 +46,10 @@ export function updateLocalRunCache(run: PayrollRunWithItems) {
   const idx = localRunsCache.findIndex((r) => r.id === run.id);
   if (idx !== -1) {
     localRunsCache[idx] = run;
-    persistRunsCache();
+  } else {
+    localRunsCache.unshift(run);
   }
+  persistRunsCache();
 }
 
 /**
