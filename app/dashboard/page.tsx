@@ -343,18 +343,7 @@ export default function DashboardPage() {
                   </div>
                 </Link>
 
-                <Link href="/attendance" style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <div className="quick-action-item">
-                    <div className="quick-action-icon">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                      </svg>
-                    </div>
-                    <span className="quick-action-label">Attendance & DTR</span>
-                    <span className="quick-action-count">DTR Logs</span>
-                  </div>
-                </Link>
+
 
                 <Link href="/payroll-runs" style={{ textDecoration: 'none', color: 'inherit' }}>
                   <div className="quick-action-item">
