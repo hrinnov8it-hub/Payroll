@@ -35,31 +35,22 @@ export const TopNav: React.FC<TopNavProps> = ({
       subscription.unsubscribe();
     };
   }, []);
-
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<string | null>(null);
-
-  const handleSync = async () => {
-    setIsSyncing(true);
-    setSyncStatus('Syncing...');
-    try {
-      const res = await fetch('/api/sync', { method: 'POST' });
-      const result = await res.json();
-      if (result.success) {
-        setSyncStatus(`Synced! (${result.synced?.departments || 0} depts, ${result.synced?.employees || 0} emp)`);
-        setTimeout(() => setSyncStatus(null), 5000);
-      } else {
-        const msg = result.errors?.[0] || 'Sync incomplete';
-        setSyncStatus(msg.length > 35 ? msg.substring(0, 35) + '...' : msg);
-        setTimeout(() => setSyncStatus(null), 6000);
+  // Automatically synchronize data to Supabase in background once per session
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const alreadySynced = sessionStorage.getItem('innov8it_auto_synced');
+      if (!alreadySynced) {
+        fetch('/api/sync', { method: 'POST' })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data?.success) {
+              sessionStorage.setItem('innov8it_auto_synced', 'true');
+            }
+          })
+          .catch(() => {});
       }
-    } catch {
-      setSyncStatus('Sync network failed');
-      setTimeout(() => setSyncStatus(null), 4000);
-    } finally {
-      setIsSyncing(false);
     }
-  };
+  }, []);
 
   const handleSignOut = async () => {
     setIsLoggingOut(true);
@@ -97,18 +88,6 @@ export const TopNav: React.FC<TopNavProps> = ({
       </div>
 
       <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <Button
-          variant="outline"
-          size="xs"
-          onClick={handleSync}
-          isLoading={isSyncing}
-          title="Sync departments, positions, employees, and settings to Supabase"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-          </svg>
-          {syncStatus || 'Sync to Supabase'}
-        </Button>
 
         {userEmail ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
