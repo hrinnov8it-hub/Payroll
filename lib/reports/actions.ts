@@ -79,14 +79,15 @@ async function getRawPayrollData(): Promise<any[]> {
     return fallbackPayrollRuns;
   }
 
-  // 4. Construct from active payslips / SEED_PAYSLIPS grouped by run
+  // 4. Construct from active payslips grouped by run
   try {
     const payslips = await getPayslips();
-    const targetPayslips = payslips && payslips.length > 0 ? payslips : SEED_PAYSLIPS;
+    const targetPayslips = payslips && payslips.length > 0 ? payslips : [];
     if (targetPayslips && targetPayslips.length > 0) {
       const runGroups = new Map<string, typeof targetPayslips>();
       for (const ps of targetPayslips) {
-        const rId = ps.payroll_run_id || 'run-seed-001';
+        const rId = ps.payroll_run_id;
+        if (!rId) continue;
         if (!runGroups.has(rId)) {
           runGroups.set(rId, []);
         }
@@ -97,10 +98,10 @@ async function getRawPayrollData(): Promise<any[]> {
         const first = items[0];
         return {
           id: runId,
-          run_number: first.run_number || 'PR-202609-01',
+          run_number: first.run_number || 'PR-RUN',
           status: 'approved',
           payroll_period: {
-            id: first.period_id || '00000000-0000-0000-0000-000000000001',
+            id: first.period_id || '',
             name: first.period_name || 'Sep 1 – 15, 2026 (1st Half)',
             start_date: first.period_start || '2026-09-01',
             end_date: first.period_end || '2026-09-15',

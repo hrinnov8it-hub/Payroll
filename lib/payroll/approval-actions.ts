@@ -26,30 +26,7 @@ import {
 // In Phase 13 (Audit & Security), this will be persisted to Supabase.
 // ==============================================================================
 
-let auditLog: PayrollAuditEvent[] = [
-  {
-    id: 'audit-seed-001',
-    payroll_run_id: 'run-mock-001',
-    action: 'run_created',
-    performed_by: 'system',
-    performed_by_name: 'System',
-    from_status: null,
-    to_status: 'draft',
-    notes: 'Initial payroll run created.',
-    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'audit-seed-002',
-    payroll_run_id: 'run-mock-001',
-    action: 'submitted_for_review',
-    performed_by: 'user-hr-001',
-    performed_by_name: 'Maria Santos (HR)',
-    from_status: 'draft',
-    to_status: 'review',
-    notes: null,
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
+let auditLog: PayrollAuditEvent[] = [];
 
 // ==============================================================================
 // Role permission definitions

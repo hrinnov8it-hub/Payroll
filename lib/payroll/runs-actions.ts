@@ -19,7 +19,19 @@ if (typeof window !== 'undefined') {
   try {
     const stored = window.localStorage.getItem('innov8it_runs_cache');
     if (stored) {
-      localRunsCache = JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        localRunsCache = parsed.filter(
+          (r) =>
+            r.id !== '00000000-0000-0000-0000-000000000051' &&
+            r.id !== '84b74bfb-d142-491e-8008-3e95aacd0f93' &&
+            r.id !== 'a1e71e27-2597-4bbb-8776-aa464196ec5a' &&
+            r.run_number !== 'PR-202609-01' &&
+            r.run_number !== 'RUN-202610-02' &&
+            r.run_number !== 'RUN-202610-03'
+        );
+        window.localStorage.setItem('innov8it_runs_cache', JSON.stringify(localRunsCache));
+      }
     }
   } catch (e) {
     console.error('Failed to parse runs cache from localStorage', e);

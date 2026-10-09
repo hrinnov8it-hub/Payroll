@@ -19,7 +19,15 @@ if (typeof window !== 'undefined') {
   try {
     const stored = window.localStorage.getItem('innov8it_attendance_cache');
     if (stored) {
-      localAttendanceCache = JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        localAttendanceCache = parsed.filter(
+          (a) =>
+            !a.id?.startsWith('att-seed-') &&
+            !['emp-001', 'emp-002', 'emp-003', 'emp-004', 'emp-005'].includes(a.employee_id)
+        );
+        window.localStorage.setItem('innov8it_attendance_cache', JSON.stringify(localAttendanceCache));
+      }
     }
   } catch (e) {
     console.error('Failed to parse attendance cache from localStorage', e);

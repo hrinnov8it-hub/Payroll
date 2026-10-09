@@ -185,6 +185,12 @@ export async function syncAllDataToSupabase(): Promise<{
           const runsList = JSON.parse(storedRuns);
           for (const r of runsList) {
             if (!isValidUUID(r.id) || !isValidUUID(r.payroll_period_id)) continue;
+            if (
+              ['00000000-0000-0000-0000-000000000051', '84b74bfb-d142-491e-8008-3e95aacd0f93', 'a1e71e27-2597-4bbb-8776-aa464196ec5a'].includes(r.id) ||
+              ['PR-202609-01', 'RUN-202610-02', 'RUN-202610-03'].includes(r.run_number)
+            ) {
+              continue;
+            }
 
             const { error: runErr } = await (supabase.from('payroll_runs') as any).upsert({
               id: r.id,

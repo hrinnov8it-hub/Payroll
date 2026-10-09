@@ -44,7 +44,12 @@ if (typeof window !== 'undefined') {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        localEmployeesCache = parsed;
+        localEmployeesCache = parsed.filter(
+          (e) =>
+            !['emp-001', 'emp-002', 'emp-003', 'emp-004', 'emp-005'].includes(e.id) &&
+            !['EMP-2026-001', 'EMP-2026-002', 'EMP-2026-003', 'EMP-2026-004', 'EMP-2026-005'].includes(e.employee_number)
+        );
+        window.localStorage.setItem('innov8it_employees_cache', JSON.stringify(localEmployeesCache));
       }
     }
   } catch {}

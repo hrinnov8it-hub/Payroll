@@ -17,32 +17,7 @@ export interface AuditLogRecord extends AuditEventInput {
 }
 
 // In-memory fallback trail for demo / offline mode
-const localAuditLogs: AuditLogRecord[] = [
-  {
-    id: 'audit-001',
-    action: 'payroll_run_created',
-    entity_type: 'payroll_run',
-    entity_id: 'run-seed-001',
-    actor_id: 'usr-admin-01',
-    actor_email: 'hr.innov8it@gmail.com',
-    actor_role: 'admin',
-    details: { run_number: 'PR-202609-01', total_employees: 4 },
-    ip_address: '127.0.0.1',
-    created_at: '2026-09-15T08:00:00Z',
-  },
-  {
-    id: 'audit-002',
-    action: 'payroll_run_approved',
-    entity_type: 'payroll_run',
-    entity_id: 'run-seed-001',
-    actor_id: 'usr-admin-01',
-    actor_email: 'hr.innov8it@gmail.com',
-    actor_role: 'admin',
-    details: { run_number: 'PR-202609-01', approved_by: 'Innov8IT HR Admin' },
-    ip_address: '127.0.0.1',
-    created_at: '2026-09-15T08:30:00Z',
-  },
-];
+const localAuditLogs: AuditLogRecord[] = [];
 
 /**
  * Logs a security or operational event to the audit log trail
