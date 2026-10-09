@@ -63,26 +63,34 @@ export async function syncAllDataToSupabase(): Promise<{
     const deptMap = new Map((currentDepts || []).map((d: any) => [d.code, d.id]));
 
     // 2. Sync Positions
+    const { data: existingPos } = await supabase.from('positions').select('title, department_id');
+    const existingTitles = new Set((existingPos || []).map((p: any) => `${p.department_id}-${p.title}`));
+
     const posToInsert = [
       { department_id: deptMap.get('ENG'), title: 'Engineering Lead', description: 'Technical lead for platform' },
       { department_id: deptMap.get('ENG'), title: 'Senior Software Engineer', description: 'Full-stack software development' },
+      { department_id: deptMap.get('ENG'), title: 'Full Stack Developer', description: 'Web application & API development' },
+      { department_id: deptMap.get('ENG'), title: 'QA Automation Engineer', description: 'Automated test suites & quality' },
       { department_id: deptMap.get('HR'), title: 'HR Manager', description: 'Manages HR department and compliance' },
       { department_id: deptMap.get('HR'), title: 'HR & Payroll Specialist', description: 'Payroll execution and records' },
+      { department_id: deptMap.get('FIN'), title: 'Finance Manager', description: 'Financial planning and corporate reporting' },
       { department_id: deptMap.get('FIN'), title: 'Senior Accountant', description: 'Financial audits and taxation' },
+      { department_id: deptMap.get('FIN'), title: 'Payroll Accountant', description: 'Disbursements and bank reconciliation' },
+      { department_id: deptMap.get('OPS'), title: 'Operations Lead', description: 'Customer delivery and services' },
       { department_id: deptMap.get('OPS'), title: 'Operations Specialist', description: 'Operational workflows' },
-    ].filter((p) => p.department_id);
+      { department_id: deptMap.get('MKT'), title: 'Account Executive', description: 'Sales and account management' },
+      { department_id: deptMap.get('MKT'), title: 'Marketing Specialist', description: 'Brand marketing and campaigns' },
+    ].filter((p) => p.department_id && !existingTitles.has(`${p.department_id}-${p.title}`));
 
     if (posToInsert.length > 0) {
-      const { data: posData, error: posError } = await (supabase.from('positions') as any).upsert(
-        posToInsert,
-        { onConflict: 'title' }
-      ).select();
-
+      const { data: posData, error: posError } = await (supabase.from('positions') as any).insert(posToInsert).select();
       if (posError) {
         errors.push(`Positions: ${posError.message}`);
       } else {
-        stats.positions = posData?.length || posToInsert.length;
+        stats.positions = (posData?.length || 0) + (existingPos?.length || 0);
       }
+    } else {
+      stats.positions = existingPos?.length || 0;
     }
 
     // 3. Sync Employees (Merge fallbackEmployees with localStorage cache if available)

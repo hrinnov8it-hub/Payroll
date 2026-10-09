@@ -215,7 +215,7 @@ export default function EmployeeProfilePage() {
                 </div>
 
                 <div className="profile-detail-row">
-                  <span className="profile-detail-label">Designated Job Title</span>
+                  <span className="profile-detail-label">Position / Designation</span>
                   <span className="profile-detail-value">
                     <strong>{employee.position?.title || '—'}</strong>
                   </span>

@@ -154,9 +154,10 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
     }
   };
 
-  const filteredPositions = formData.department_id
+  const matchingPositions = formData.department_id
     ? positions.filter((p) => !p.department_id || p.department_id === formData.department_id)
     : positions;
+  const filteredPositions = matchingPositions.length > 0 ? matchingPositions : positions;
 
   return (
     <form onSubmit={handleSubmit} className="employee-form-container">

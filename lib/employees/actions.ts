@@ -105,7 +105,8 @@ export async function getPositions(departmentId?: string): Promise<Position[]> {
 
     if (error || !data || data.length === 0) {
       if (departmentId) {
-        return fallbackPositions.filter((p) => p.department_id === departmentId);
+        const filtered = fallbackPositions.filter((p) => p.department_id === departmentId);
+        return filtered.length > 0 ? filtered : fallbackPositions;
       }
       return fallbackPositions;
     }
@@ -113,7 +114,8 @@ export async function getPositions(departmentId?: string): Promise<Position[]> {
     return data as Position[];
   } catch {
     if (departmentId) {
-      return fallbackPositions.filter((p) => p.department_id === departmentId);
+      const filtered = fallbackPositions.filter((p) => p.department_id === departmentId);
+      return filtered.length > 0 ? filtered : fallbackPositions;
     }
     return fallbackPositions;
   }

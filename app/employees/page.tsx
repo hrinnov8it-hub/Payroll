@@ -228,7 +228,7 @@ export default function EmployeesPage() {
                 <TableRow>
                   <TableHeaderCell>Employee</TableHeaderCell>
                   <TableHeaderCell>Employee ID</TableHeaderCell>
-                  <TableHeaderCell>Department & Role</TableHeaderCell>
+                  <TableHeaderCell>Department & Designation</TableHeaderCell>
                   <TableHeaderCell>Type</TableHeaderCell>
                   <TableHeaderCell align="right">Basic Rate</TableHeaderCell>
                   <TableHeaderCell align="right">Hourly Basis</TableHeaderCell>
@@ -285,7 +285,7 @@ export default function EmployeesPage() {
                       </TableCell>
                       <TableCell>
                         <div style={{ fontWeight: 500, color: 'var(--text-main)' }}>
-                          {emp.position?.title || 'Unassigned Position'}
+                          {emp.position?.title || 'Unassigned Designation'}
                         </div>
                         <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                           {emp.department?.name || 'Unassigned Dept'}
