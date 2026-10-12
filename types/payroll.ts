@@ -386,6 +386,7 @@ export interface PayrollAuditEvent {
 }
 
 export interface ApprovalRecord {
+  event_id?: string;
   approver_name: string;
   approver_role: string;
   action: string;

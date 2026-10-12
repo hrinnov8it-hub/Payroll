@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -31,6 +31,7 @@ import {
   getPayrollRunById,
   recalculatePayrollRun,
   updateLocalRunCache,
+  deletePayrollRun,
 } from '@/lib/payroll/runs-actions';
 import { syncPayslipsFromRun } from '@/lib/payslips/actions';
 import { getItemizedDeductions } from '@/lib/payroll/item-deductions';
@@ -46,6 +47,9 @@ import {
   buildApprovalChain,
   getRolePermissions,
   UserRole,
+  updateRunApproverName,
+  updateAuditEventName,
+  deleteAuditEvent,
 } from '@/lib/payroll/approval-actions';
 
 const WORKFLOW_STEPS: PayrollRunStatus[] = [
@@ -107,6 +111,7 @@ function getApproverRecordActionClass(action: string): string {
 }
 
 export default function PayrollRunDetailPage() {
+  const router = useRouter();
   const params = useParams();
   const runId = params?.id as string;
 
@@ -120,6 +125,13 @@ export default function PayrollRunDetailPage() {
 
   // Phase 9: Review & Approval state
   const [activeRole, setActiveRole] = useState<UserRole>('payroll_hr');
+  const [userName, setUserName] = useState<string>('Maria Santos (HR Admin)');
+  const [isSavingName, setIsSavingName] = useState<boolean>(false);
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [editingNameValue, setEditingNameValue] = useState<string>('');
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
+
   const [auditEvents, setAuditEvents] = useState<PayrollAuditEvent[]>([]);
   const [approvalChain, setApprovalChain] = useState<ApprovalRecord[]>([]);
   const [reviewNote, setReviewNote] = useState<string>('');
@@ -131,7 +143,27 @@ export default function PayrollRunDetailPage() {
   const [showReturnModal, setShowReturnModal] = useState<boolean>(false);
   const [returnReason, setReturnReason] = useState<string>('');
 
-  const currentUser = MOCK_USERS[activeRole];
+  // Initial user name from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedName = localStorage.getItem('innov8it_user_name');
+      if (storedName) {
+        setUserName(storedName);
+        return;
+      }
+      try {
+        const storedUser = localStorage.getItem('innov8it_current_user');
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          if (parsed?.name) {
+            setUserName(parsed.name);
+          }
+        }
+      } catch {}
+    }
+  }, []);
+
+  const currentUser = { ...MOCK_USERS[activeRole], name: userName };
   const permissions = getRolePermissions(activeRole);
 
   const refreshAuditData = useCallback((id: string) => {
@@ -287,6 +319,66 @@ export default function PayrollRunDetailPage() {
     }
   };
 
+  const handleSaveUserName = async () => {
+    if (!userName.trim()) return;
+    setIsSavingName(true);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('innov8it_user_name', userName.trim());
+      }
+      if (run) {
+        await updateRunApproverName(run.id, userName.trim());
+        refreshAuditData(run.id);
+        const refreshed = await getPayrollRunById(run.id);
+        if (refreshed) setRun(refreshed);
+      }
+      showNotification('success', `Reviewer / Approver name saved as "${userName.trim()}".`);
+    } catch {
+      showNotification('error', 'Failed to save approver name.');
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
+  const handleSaveRecordName = async (record: ApprovalRecord) => {
+    if (!editingNameValue.trim() || !record.event_id) return;
+    updateAuditEventName(record.event_id, editingNameValue.trim());
+    if (run) {
+      await updateRunApproverName(run.id, editingNameValue.trim());
+      refreshAuditData(run.id);
+      const refreshed = await getPayrollRunById(run.id);
+      if (refreshed) setRun(refreshed);
+    }
+    setEditingRecordId(null);
+    showNotification('success', 'Approver name saved successfully.');
+  };
+
+  const handleDeleteRecord = (record: ApprovalRecord) => {
+    if (!record.event_id) return;
+    if (!confirm(`Are you sure you want to remove the "${record.action}" entry by ${record.approver_name}?`)) return;
+    deleteAuditEvent(record.event_id);
+    if (run) {
+      refreshAuditData(run.id);
+    }
+    showNotification('success', 'Approval entry removed.');
+  };
+
+  const handleDeleteRun = async () => {
+    if (!run) return;
+    setDeleteLoading(true);
+    try {
+      const res = await deletePayrollRun(run.id);
+      if (res.success) {
+        setShowDeleteModal(false);
+        router.push('/payroll-runs');
+      } else {
+        showNotification('error', res.error || 'Failed to delete payroll run.');
+      }
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <AppShell>
@@ -411,6 +503,14 @@ export default function PayrollRunDetailPage() {
             >
               Recalculate
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDeleteModal(true)}
+              style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+            >
+              🗑️ Delete Run
+            </Button>
           </div>
         </div>
 
@@ -513,6 +613,39 @@ export default function PayrollRunDetailPage() {
                 )}
               </div>
             )}
+
+            {/* Reviewer / Approver Name customizer */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              marginBottom: '1rem',
+              padding: '0.75rem 1rem',
+              background: '#f8fafc',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid #e2e8f0',
+              flexWrap: 'wrap'
+            }}>
+              <span style={{ fontSize: '0.84rem', fontWeight: 600, color: '#334155' }}>
+                ✍️ Reviewer / Approver Name:
+              </span>
+              <div style={{ width: '280px' }}>
+                <Input
+                  id="approver-name-input"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  placeholder="Enter your name..."
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSaveUserName}
+                isLoading={isSavingName}
+              >
+                💾 Save Name
+              </Button>
+            </div>
 
             {/* Approval Action Buttons */}
             <div className="approval-action-row">
@@ -650,24 +783,87 @@ export default function PayrollRunDetailPage() {
         {/* Approval Chain Panel */}
         {approvalChain.length > 0 && (
           <Card style={{ marginBottom: '1.5rem', padding: '1.25rem' }}>
-            <div style={{ fontWeight: 700, color: 'var(--brand-dark-blue)', marginBottom: '1rem', fontSize: '0.9rem' }}>
-              🔗 Approval Chain
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ fontWeight: 700, color: 'var(--brand-dark-blue)', fontSize: '0.9rem' }}>
+                🔗 Approval Chain
+              </div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                {approvalChain.length} record{approvalChain.length > 1 ? 's' : ''}
+              </span>
             </div>
             {approvalChain.map((record, idx) => (
-              <div key={idx} className="approver-record">
+              <div key={idx} className="approver-record" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div className="approver-avatar">
                   {record.approver_name.charAt(0).toUpperCase()}
                 </div>
-                <div className="approver-record-info">
-                  <div className="approver-record-name">{record.approver_name}</div>
+                <div className="approver-record-info" style={{ flex: 1 }}>
+                  {editingRecordId === (record.event_id || `rec-${idx}`) ? (
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', margin: '0.2rem 0', flexWrap: 'wrap' }}>
+                      <Input
+                        value={editingNameValue}
+                        onChange={(e) => setEditingNameValue(e.target.value)}
+                        placeholder="Edit name..."
+                        style={{ height: '32px', fontSize: '0.85rem', width: '220px' }}
+                      />
+                      <Button size="sm" variant="primary" onClick={() => handleSaveRecordName(record)}>
+                        Save
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setEditingRecordId(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div className="approver-record-name">{record.approver_name}</div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingRecordId(record.event_id || `rec-${idx}`);
+                          setEditingNameValue(record.approver_name);
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--brand-blue)',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          padding: '0 4px',
+                          textDecoration: 'underline'
+                        }}
+                        title="Change approver name"
+                      >
+                        ✏️ Edit Name
+                      </button>
+                    </div>
+                  )}
                   <div className="approver-record-meta">
                     {formatDateTime(record.timestamp)}
                     {record.notes && <span style={{ marginLeft: '0.5rem' }}>— {record.notes}</span>}
                   </div>
                 </div>
-                <span className={`approver-record-action ${getApproverRecordActionClass(record.action)}`}>
-                  {record.action}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span className={`approver-record-action ${getApproverRecordActionClass(record.action)}`}>
+                    {record.action}
+                  </span>
+                  {record.event_id && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteRecord(record)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#dc2626',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        opacity: 0.75,
+                      }}
+                      title="Remove entry"
+                    >
+                      🗑️
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </Card>
@@ -1232,6 +1428,39 @@ export default function PayrollRunDetailPage() {
                 {10 - unlockReason.length} more character(s) required.
               </div>
             )}
+          </div>
+        </Modal>
+
+        {/* ── Modal: Delete Payroll Run ── */}
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          title="Confirm Delete Payroll Run"
+          size="sm"
+          footer={
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <Button variant="outline" size="sm" onClick={() => setShowDeleteModal(false)} disabled={deleteLoading}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                isLoading={deleteLoading}
+                onClick={handleDeleteRun}
+                style={{ backgroundColor: '#dc2626', borderColor: '#dc2626' }}
+              >
+                Delete Payroll Run
+              </Button>
+            </div>
+          }
+        >
+          <div>
+            <div style={{ padding: '0.75rem 1rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.85rem', color: '#7f1d1d' }}>
+              ⚠️ Are you sure you want to permanently delete payroll run <strong>{run.run_number}</strong>?
+            </div>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0 }}>
+              All calculated employee snapshot records and generated payslips for this cycle will be removed.
+            </p>
           </div>
         </Modal>
 

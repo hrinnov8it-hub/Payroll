@@ -20,7 +20,7 @@ import {
   TableContainer,
 } from '@/components/ui/Table';
 import { Payslip, PayslipAccessUser, PayslipStatus } from '@/types/payslip';
-import { getPayslips, syncPayslipsFromRun } from '@/lib/payslips/actions';
+import { getPayslips, syncPayslipsFromRun, deletePayslip } from '@/lib/payslips/actions';
 import { getPayrollRuns } from '@/lib/payroll/runs-actions';
 import { PayrollRun } from '@/types/payroll';
 
@@ -61,12 +61,44 @@ export default function PayslipsPage() {
   const [payslips, setPayslips] = useState<Payslip[]>([]);
   const [runs, setRuns] = useState<PayrollRun[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   // Filters
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [periodFilter, setPeriodFilter] = useState<string>('all');
+
+  const handleSyncAllPayslips = async () => {
+    setSyncing(true);
+    try {
+      const runsList = await getPayrollRuns();
+      for (const r of runsList) {
+        await syncPayslipsFromRun(r.id);
+      }
+      await loadData(currentUser);
+    } catch (err) {
+      console.error('Error syncing payslips:', err);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleDeletePayslip = async (payslip: Payslip) => {
+    if (!confirm(`Are you sure you want to delete payslip ${payslip.payslip_number} for ${payslip.employee_name}?`)) {
+      return;
+    }
+    try {
+      const res = await deletePayslip(payslip.id);
+      if (res.success) {
+        setPayslips((prev) => prev.filter((p) => p.id !== payslip.id));
+      } else {
+        alert(res.error || 'Failed to delete payslip');
+      }
+    } catch {
+      alert('Failed to delete payslip');
+    }
+  };
 
   const loadData = async (user: PayslipAccessUser) => {
     setLoading(true);
@@ -155,6 +187,14 @@ export default function PayslipsPage() {
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSyncAllPayslips}
+              isLoading={syncing}
+            >
+              🔄 Sync / Regenerate Payslips
+            </Button>
             <Link href="/payroll-runs">
               <Button variant="outline" size="sm">
                 View Payroll Runs
@@ -331,11 +371,23 @@ export default function PayslipsPage() {
                       </TableCell>
 
                       <TableCell align="right">
-                        <Link href={`/payslips/${item.id}?as=${selectedUserKey}`}>
-                          <Button size="sm" variant="outline" id={`btn-view-${item.id}`}>
-                            View Payslip
-                          </Button>
-                        </Link>
+                        <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                          <Link href={`/payslips/${item.id}?as=${selectedUserKey}`}>
+                            <Button size="sm" variant="outline" id={`btn-view-${item.id}`}>
+                              View Payslip
+                            </Button>
+                          </Link>
+                          {currentUser.role !== 'employee' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeletePayslip(item)}
+                              style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+                            >
+                              🗑️ Delete
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

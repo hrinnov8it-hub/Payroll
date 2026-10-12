@@ -21,11 +21,7 @@ if (typeof window !== 'undefined') {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed)) {
-        localPayslipsCache = parsed.filter(
-          (p) =>
-            !p.id?.startsWith('ps-seed-') &&
-            !['emp-001', 'emp-002', 'emp-003', 'emp-004', 'emp-005'].includes(p.employee_id)
-        );
+        localPayslipsCache = parsed;
         window.localStorage.setItem('innov8it_payslips_cache', JSON.stringify(localPayslipsCache));
       }
     }
@@ -237,6 +233,14 @@ export async function getPayslips(
     const { data, error } = await query;
 
     if (error || !data || data.length === 0) {
+      if (localPayslipsCache.length === 0) {
+        try {
+          const runs = await getPayrollRuns();
+          for (const r of runs) {
+            await syncPayslipsFromRun(r.id);
+          }
+        } catch {}
+      }
       // Fallback to local cache with permission enforcement
       return filterLocalPayslips(localPayslipsCache, filters, currentUser);
     }
@@ -502,4 +506,40 @@ export async function publishPayslips(runId: string): Promise<boolean> {
   } catch {}
 
   return true;
+}
+
+/**
+ * Delete a single payslip
+ */
+export async function deletePayslip(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    localPayslipsCache = localPayslipsCache.filter((p) => p.id !== id && p.payslip_number !== id);
+    persistPayslipsCache();
+
+    if (isValidUUID(id)) {
+      const supabase = createClient();
+      await (supabase.from('payslips') as any).delete().eq('id', id);
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to delete payslip' };
+  }
+}
+
+/**
+ * Delete all payslips for a specific payroll run
+ */
+export async function deletePayslipsByRunId(runId: string): Promise<{ success: boolean }> {
+  try {
+    localPayslipsCache = localPayslipsCache.filter((p) => p.payroll_run_id !== runId);
+    persistPayslipsCache();
+
+    if (isValidUUID(runId)) {
+      const supabase = createClient();
+      await (supabase.from('payslips') as any).delete().eq('payroll_run_id', runId);
+    }
+    return { success: true };
+  } catch {
+    return { success: true };
+  }
 }

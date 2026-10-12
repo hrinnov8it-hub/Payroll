@@ -23,7 +23,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { PayrollRun, PayrollRunStatus } from '@/types/payroll';
 import { PayrollPeriod } from '@/types/attendance';
-import { getPayrollRuns, createPayrollRun } from '@/lib/payroll/runs-actions';
+import { getPayrollRuns, createPayrollRun, deletePayrollRun } from '@/lib/payroll/runs-actions';
 import { getPayrollPeriods } from '@/lib/attendance/actions';
 
 export default function PayrollRunsPage() {
@@ -37,6 +37,8 @@ export default function PayrollRunsPage() {
   const [runNotes, setRunNotes] = useState<string>('');
   const [creating, setCreating] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [runToDelete, setRunToDelete] = useState<PayrollRun | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -54,6 +56,22 @@ export default function PayrollRunsPage() {
       setLoading(false);
     }
   }, []);
+
+  const handleDeleteConfirm = async () => {
+    if (!runToDelete) return;
+    setIsDeleting(true);
+    try {
+      const res = await deletePayrollRun(runToDelete.id);
+      if (res.success) {
+        setRunToDelete(null);
+        await loadData();
+      } else {
+        alert(res.error || 'Failed to delete payroll run');
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -327,11 +345,21 @@ export default function PayrollRunsPage() {
                       </TableCell>
 
                       <TableCell align="right">
-                        <Link href={`/payroll-runs/${run.id}`}>
-                          <Button variant="outline" size="sm">
-                            View Snapshots
+                        <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                          <Link href={`/payroll-runs/${run.id}`}>
+                            <Button variant="outline" size="sm">
+                              View Snapshots
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setRunToDelete(run)}
+                            style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+                          >
+                            🗑️ Delete
                           </Button>
-                        </Link>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -401,6 +429,46 @@ export default function PayrollRunsPage() {
               />
             </div>
           </form>
+        </Modal>
+
+        {/* Modal: Confirm Delete Payroll Run */}
+        <Modal
+          isOpen={!!runToDelete}
+          onClose={() => setRunToDelete(null)}
+          title="Confirm Delete Payroll Run"
+          size="sm"
+          footer={
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setRunToDelete(null)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleDeleteConfirm}
+                isLoading={isDeleting}
+                style={{ backgroundColor: '#dc2626', borderColor: '#dc2626' }}
+              >
+                Delete Payroll Run
+              </Button>
+            </>
+          }
+        >
+          {runToDelete && (
+            <div style={{ padding: '0.5rem 0' }}>
+              <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.92rem', color: '#1e293b' }}>
+                Are you sure you want to permanently delete payroll run <strong>{runToDelete.run_number}</strong>?
+              </p>
+              <p style={{ margin: 0, fontSize: '0.82rem', color: '#dc2626' }}>
+                ⚠️ This will permanently remove all employee snapshots and generated payslips tied to this run.
+              </p>
+            </div>
+          )}
         </Modal>
       </div>
     </AppShell>

@@ -536,6 +536,7 @@ export function buildApprovalChain(runId: string): ApprovalRecord[] {
   return events
     .filter((e) => relevantActions.includes(e.action))
     .map((e) => ({
+      event_id: e.id,
       approver_name: e.performed_by_name,
       approver_role: e.performed_by === 'system' ? 'System' : 'Payroll HR / Admin',
       action: formatAuditAction(e.action),
@@ -543,3 +544,65 @@ export function buildApprovalChain(runId: string): ApprovalRecord[] {
       notes: e.notes || null,
     }));
 }
+
+/**
+ * Delete a specific audit event or approval record
+ */
+export function deleteAuditEvent(eventId: string): boolean {
+  const initialLen = auditLog.length;
+  auditLog = auditLog.filter((e) => e.id !== eventId);
+  if (auditLog.length !== initialLen) {
+    persistAuditLog();
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Update the approver / reviewer name for a specific audit event
+ */
+export function updateAuditEventName(eventId: string, newName: string): boolean {
+  const event = auditLog.find((e) => e.id === eventId);
+  if (event) {
+    event.performed_by_name = newName.trim();
+    persistAuditLog();
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Update approver name on a payroll run across both audit trail and payroll run record
+ */
+export async function updateRunApproverName(
+  runId: string,
+  newName: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const cleanName = newName.trim();
+    if (!cleanName) return { success: false, error: 'Name cannot be empty' };
+
+    // 1. Update in audit trail for this run
+    let changed = false;
+    auditLog.forEach((e) => {
+      if (e.payroll_run_id === runId) {
+        e.performed_by_name = cleanName;
+        changed = true;
+      }
+    });
+    if (changed) {
+      persistAuditLog();
+    }
+
+    // 2. Update in payroll runs cache & Supabase
+    const { updatePayrollRunDetails } = await import('@/lib/payroll/runs-actions');
+    await updatePayrollRunDetails(runId, {
+      approved_by_name: cleanName,
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to update approver name.' };
+  }
+}
+
