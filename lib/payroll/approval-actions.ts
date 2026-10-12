@@ -22,13 +22,41 @@ import {
 } from '@/types/payroll';
 import { createClient } from '@/lib/supabase/client';
 import { syncPayslipsFromRun } from '@/lib/payslips/actions';
+import { updateLocalRunCache } from '@/lib/payroll/runs-actions';
 
 // ==============================================================================
-// In-memory audit event store
-// In Phase 13 (Audit & Security), this will be persisted to Supabase.
+// In-memory & LocalStorage audit event store
+// Persisted across page refreshes and wired to Supabase
 // ==============================================================================
 
 let auditLog: PayrollAuditEvent[] = [];
+
+if (typeof window !== 'undefined') {
+  try {
+    const stored = window.localStorage.getItem('innov8it_audit_log');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        auditLog = parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to parse audit log from localStorage', e);
+  }
+}
+
+function persistAuditLog() {
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem('innov8it_audit_log', JSON.stringify(auditLog));
+    } catch {}
+  }
+}
+
+function isValidUUID(str?: string | null): boolean {
+  if (!str) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
+}
 
 // ==============================================================================
 // Role permission definitions
@@ -67,6 +95,7 @@ function createAuditEvent(
 
 function appendAuditEvent(event: PayrollAuditEvent): void {
   auditLog.unshift(event);
+  persistAuditLog();
 }
 
 export function getAuditEventsForRun(runId: string): PayrollAuditEvent[] {
@@ -85,10 +114,27 @@ export interface ApprovalActionResult {
 }
 
 async function persistRunToSupabase(runId: string, updates: Record<string, any>) {
+  if (!isValidUUID(runId)) {
+    return;
+  }
   try {
     const supabase = createClient();
+    const cleanUpdates = { ...updates };
+
+    // PostgreSQL UUID columns reject non-UUID strings (e.g. mock user IDs like 'user-hr-001').
+    // Only pass if it is a valid UUID, otherwise pass null so the DB update succeeds.
+    if ('approved_by' in cleanUpdates && !isValidUUID(cleanUpdates.approved_by)) {
+      cleanUpdates.approved_by = null;
+    }
+    if ('processed_by' in cleanUpdates && !isValidUUID(cleanUpdates.processed_by)) {
+      cleanUpdates.processed_by = null;
+    }
+    if ('locked_by' in cleanUpdates && !isValidUUID(cleanUpdates.locked_by)) {
+      cleanUpdates.locked_by = null;
+    }
+
     const { error } = await (supabase.from('payroll_runs') as any)
-      .update(updates)
+      .update(cleanUpdates)
       .eq('id', runId);
     if (error) {
       console.warn('Supabase update notice for run', runId, error.message);
@@ -129,6 +175,7 @@ export async function submitForReview(
   });
 
   appendAuditEvent(event);
+  updateLocalRunCache(updatedRun);
   await persistRunToSupabase(run.id, {
     status: 'review',
     review_notes: updatedRun.review_notes,
@@ -174,6 +221,7 @@ export async function returnToDraft(
   });
 
   appendAuditEvent(event);
+  updateLocalRunCache(updatedRun);
   await persistRunToSupabase(run.id, {
     status: 'draft',
     updated_at: updatedRun.updated_at,
@@ -223,6 +271,7 @@ export async function approvePayrollRun(
   });
 
   appendAuditEvent(event);
+  updateLocalRunCache(updatedRun);
   await persistRunToSupabase(run.id, {
     status: 'approved',
     approved_by: performedBy,
@@ -230,6 +279,13 @@ export async function approvePayrollRun(
     approved_at: approvedAt,
     updated_at: approvedAt,
   });
+
+  // Automatically sync and generate published payslips upon approval
+  try {
+    await syncPayslipsFromRun(run.id, updatedRun);
+  } catch (err) {
+    console.warn('Notice: Failed to sync payslips upon approvePayrollRun:', err);
+  }
 
   return { success: true, data: updatedRun, auditEvent: event };
 }
@@ -273,6 +329,7 @@ export async function markAsPaid(
   });
 
   appendAuditEvent(event);
+  updateLocalRunCache(updatedRun);
   await persistRunToSupabase(run.id, {
     status: 'paid',
     processed_by: performedBy,
@@ -281,7 +338,7 @@ export async function markAsPaid(
   });
 
   try {
-    await syncPayslipsFromRun(run.id);
+    await syncPayslipsFromRun(run.id, updatedRun);
   } catch (err) {
     console.warn('Notice: Failed to sync payslips upon markAsPaid:', err);
   }
@@ -329,6 +386,7 @@ export async function lockPayrollRun(
   });
 
   appendAuditEvent(event);
+  updateLocalRunCache(updatedRun);
   await persistRunToSupabase(run.id, {
     status: 'locked',
     locked_by: performedBy,
@@ -393,6 +451,7 @@ export async function unlockPayrollRun(
   });
 
   appendAuditEvent(event);
+  updateLocalRunCache(updatedRun);
   await persistRunToSupabase(run.id, {
     status: 'paid',
     locked_by: null,
@@ -434,6 +493,7 @@ export async function addReviewNote(
   });
 
   appendAuditEvent(event);
+  updateLocalRunCache(updatedRun);
   await persistRunToSupabase(run.id, {
     review_notes: note.trim(),
     updated_at: updatedRun.updated_at,

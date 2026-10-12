@@ -32,6 +32,7 @@ import {
   recalculatePayrollRun,
   updateLocalRunCache,
 } from '@/lib/payroll/runs-actions';
+import { syncPayslipsFromRun } from '@/lib/payslips/actions';
 import { getItemizedDeductions } from '@/lib/payroll/item-deductions';
 import {
   submitForReview,
@@ -144,7 +145,12 @@ export default function PayrollRunDetailPage() {
       setLoading(true);
       const data = await getPayrollRunById(runId);
       setRun(data);
-      if (data) refreshAuditData(data.id);
+      if (data) {
+        refreshAuditData(data.id);
+        if (data.items && data.items.length > 0) {
+          syncPayslipsFromRun(data.id, data).catch(() => {});
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -167,6 +173,10 @@ export default function PayrollRunDetailPage() {
       const res = await recalculatePayrollRun(runId);
       if (res.success && res.data) {
         setRun(res.data);
+        updateLocalRunCache(res.data);
+        if (res.data.items && res.data.items.length > 0) {
+          syncPayslipsFromRun(res.data.id, res.data).catch(() => {});
+        }
         showNotification('success', 'Payroll run recalculated successfully.');
       } else {
         showNotification('error', res.error || 'Failed to recalculate.');
@@ -199,6 +209,9 @@ export default function PayrollRunDetailPage() {
         setRun(result.data);
         updateLocalRunCache(result.data);
         refreshAuditData(result.data.id);
+        if (result.data.items && result.data.items.length > 0) {
+          syncPayslipsFromRun(result.data.id, result.data).catch(() => {});
+        }
         const labels: Record<string, string> = {
           submit: 'Payroll run submitted for review.',
           approve: 'Payroll run approved. Approver record saved.',
@@ -383,9 +396,9 @@ export default function PayrollRunDetailPage() {
 
           {/* Header Actions */}
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <Link href="/payslips">
-              <Button variant="outline" size="sm">
-                View Payslips
+            <Link href={`/payslips?periodId=${run.payroll_period_id}`}>
+              <Button variant="outline" size="sm" style={{ fontWeight: 600 }}>
+                📄 View Payslips ({run.total_employees})
               </Button>
             </Link>
             <Button

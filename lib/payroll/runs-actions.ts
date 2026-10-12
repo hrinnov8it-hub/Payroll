@@ -83,11 +83,43 @@ export async function getPayrollRuns(): Promise<PayrollRun[]> {
       `)
       .order('created_at', { ascending: false });
 
+    const localRuns = localRunsCache.map(({ items, ...run }) => run);
+
     if (error || !data || data.length === 0) {
-      return localRunsCache.map(({ items, ...run }) => run);
+      return localRuns;
     }
 
-    return data as PayrollRun[];
+    // Merge Supabase data with localRunsCache to ensure newly created or modified runs stay visible
+    const dbRunMap = new Map((data as any[]).map((r) => [r.id, r]));
+    const merged: PayrollRun[] = (data as any[]).map((dbRun) => {
+      const local = localRunsCache.find((l) => l.id === dbRun.id || l.run_number === dbRun.run_number);
+      if (local) {
+        // If local run has newer timestamp, preserve local status and metadata
+        if (new Date(local.updated_at).getTime() >= new Date(dbRun.updated_at).getTime()) {
+          return {
+            ...dbRun,
+            status: local.status,
+            notes: local.notes || dbRun.notes,
+            approved_by: local.approved_by || dbRun.approved_by,
+            approved_by_name: local.approved_by_name || dbRun.approved_by_name,
+            approved_at: local.approved_at || dbRun.approved_at,
+            locked_by: local.locked_by || dbRun.locked_by,
+            locked_by_name: local.locked_by_name || dbRun.locked_by_name,
+            locked_at: local.locked_at || dbRun.locked_at,
+            updated_at: local.updated_at,
+          };
+        }
+      }
+      return dbRun as PayrollRun;
+    });
+
+    for (const local of localRuns) {
+      if (!dbRunMap.has(local.id)) {
+        merged.push(local);
+      }
+    }
+
+    return merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   } catch {
     return localRunsCache.map(({ items, ...run }) => run);
   }
@@ -97,6 +129,8 @@ export async function getPayrollRuns(): Promise<PayrollRun[]> {
  * Fetch a specific payroll run with its snapshot items
  */
 export async function getPayrollRunById(id: string): Promise<PayrollRunWithItems | null> {
+  const localFound = localRunsCache.find((r) => r.id === id);
+
   try {
     const supabase = createClient();
     const { data: run, error: runError } = await supabase
@@ -109,8 +143,7 @@ export async function getPayrollRunById(id: string): Promise<PayrollRunWithItems
       .single();
 
     if (runError || !run) {
-      const found = localRunsCache.find((r) => r.id === id);
-      return found || null;
+      return localFound || null;
     }
 
     const { data: items, error: itemsError } = await supabase
@@ -119,18 +152,35 @@ export async function getPayrollRunById(id: string): Promise<PayrollRunWithItems
       .eq('payroll_run_id', id)
       .order('employee_name_snapshot', { ascending: true });
 
-    if (itemsError || !items) {
-      const found = localRunsCache.find((r) => r.id === id);
-      return found || null;
-    }
+    // CRITICAL FIX: If Supabase returns no items (due to unmigrated DB or FK constraints),
+    // fall back to items stored in localRunsCache so employee calculation snapshots are never lost!
+    const effectiveItems = (items && items.length > 0)
+      ? (items as PayrollRunItem[])
+      : (localFound?.items || []);
 
-    return {
+    const effectiveStatus = (localFound && new Date(localFound.updated_at).getTime() > new Date((run as any).updated_at).getTime())
+      ? localFound.status
+      : ((run as any).status || localFound?.status || 'draft');
+
+    const result: PayrollRunWithItems = {
       ...(run as PayrollRun),
-      items: items as PayrollRunItem[],
+      status: effectiveStatus,
+      review_notes: localFound?.review_notes || (run as any)?.review_notes || null,
+      approved_by: localFound?.approved_by || (run as any)?.approved_by || null,
+      approved_by_name: localFound?.approved_by_name || (run as any)?.approved_by_name || null,
+      approved_at: localFound?.approved_at || (run as any)?.approved_at || null,
+      locked_by: localFound?.locked_by || (run as any)?.locked_by || null,
+      locked_by_name: localFound?.locked_by_name || (run as any)?.locked_by_name || null,
+      locked_at: localFound?.locked_at || (run as any)?.locked_at || null,
+      items: effectiveItems,
     };
+
+    // Keep local cache synced with DB fetch
+    updateLocalRunCache(result);
+
+    return result;
   } catch {
-    const found = localRunsCache.find((r) => r.id === id);
-    return found || null;
+    return localFound || null;
   }
 }
 
@@ -363,6 +413,13 @@ export async function createPayrollRun(
 
     localRunsCache.unshift(newRun);
     persistRunsCache();
+
+    // Dynamically generate initial draft payslips for this run so payslips are immediately available
+    if (typeof window !== 'undefined') {
+      import('@/lib/payslips/actions')
+        .then(({ syncPayslipsFromRun }) => syncPayslipsFromRun(newRun.id, newRun))
+        .catch(() => {});
+    }
 
     return { success: true, data: newRun };
   } catch (err: any) {

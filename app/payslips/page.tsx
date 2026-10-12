@@ -75,10 +75,9 @@ export default function PayslipsPage() {
       const runsList = await getPayrollRuns();
       setRuns(runsList);
 
+      // Sync all payroll runs to ensure generated/published payslips exist
       for (const r of runsList) {
-        if (r.status === 'approved' || r.status === 'paid' || r.status === 'locked') {
-          await syncPayslipsFromRun(r.id);
-        }
+        await syncPayslipsFromRun(r.id);
       }
 
       const list = await getPayslips(

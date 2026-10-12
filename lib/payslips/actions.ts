@@ -8,6 +8,7 @@ import {
 import { getPayrollRuns, getPayrollRunById } from '@/lib/payroll/runs-actions';
 import { getItemizedDeductions } from '@/lib/payroll/item-deductions';
 import { fallbackPayrollRuns } from '@/lib/payroll/mock-runs';
+import { PayrollRunWithItems } from '@/types/payroll';
 
 export const SEED_PAYSLIPS: Payslip[] = [];
 
@@ -57,18 +58,27 @@ function generateUUID(): string {
 /**
  * Sync / generate payslips from a completed or approved payroll run
  */
-export async function syncPayslipsFromRun(runId: string): Promise<Payslip[]> {
-  const run = await getPayrollRunById(runId);
+export async function syncPayslipsFromRun(
+  runId: string,
+  optionalRun?: PayrollRunWithItems
+): Promise<Payslip[]> {
+  const run = optionalRun || (await getPayrollRunById(runId));
   if (!run || !run.items || run.items.length === 0) {
     return [];
   }
 
   const generated: Payslip[] = run.items.map((item, index) => {
-    const payslipNum = `PS-${run.run_number.replace('PR-', '')}-${(index + 1).toString().padStart(3, '0')}`;
+    const payslipNum = `PS-${run.run_number.replace('PR-', '').replace('RUN-', '')}-${(index + 1).toString().padStart(3, '0')}`;
     const itemDed = getItemizedDeductions(item);
 
-    const existing = localPayslipsCache.find((p) => p.payroll_run_item_id === item.id);
+    const existing = localPayslipsCache.find(
+      (p) => p.payroll_run_item_id === item.id || (p.payroll_run_id === run.id && p.employee_id === item.employee_id)
+    );
     if (existing) {
+      existing.status =
+        run.status === 'paid' || run.status === 'approved' || run.status === 'locked'
+          ? 'published'
+          : (existing.status || 'generated');
       existing.late_deduction = itemDed.late.amount;
       existing.undertime_deduction = itemDed.undertime.amount;
       existing.absence_deduction = itemDed.absence.amount;
@@ -79,7 +89,17 @@ export async function syncPayslipsFromRun(runId: string): Promise<Payslip[]> {
       existing.other_deductions = itemDed.other.amount;
       existing.other_deductions_list = itemDed.other.list;
       existing.total_deductions = itemDed.totalDeductions;
+      existing.basic_pay = Number(item.basic_pay);
+      existing.overtime_pay = Number(item.overtime_pay);
+      existing.night_diff_pay = Number(item.night_diff_pay);
+      existing.holiday_pay = Number(item.holiday_pay);
+      existing.rest_day_pay = Number(item.rest_day_pay);
+      existing.allowances = Number(item.allowances);
+      existing.bonuses = Number(item.bonuses);
+      existing.gross_pay = Number(item.gross_pay);
+      existing.net_pay = Number(item.net_pay);
       existing.item_breakdown = item.item_breakdown || existing.item_breakdown;
+      existing.updated_at = new Date().toISOString();
       persistPayslipsCache();
       return existing;
     }
@@ -155,7 +175,7 @@ export async function syncPayslipsFromRun(runId: string): Promise<Payslip[]> {
     return newPayslip;
   });
 
-  // Attempt to persist payslips to Supabase
+  // Attempt to persist payslips to Supabase with schema-safe columns
   try {
     const supabase = createClient();
     const rowsToInsert = generated
@@ -169,25 +189,10 @@ export async function syncPayslipsFromRun(runId: string): Promise<Payslip[]> {
         status: p.status,
         issue_date: p.issue_date,
         notes: p.notes,
-        basic_pay: p.basic_pay,
-        overtime_pay: p.overtime_pay,
-        night_diff_pay: p.night_diff_pay,
-        holiday_pay: p.holiday_pay,
-        rest_day_pay: p.rest_day_pay,
-        allowances: p.allowances,
-        bonuses: p.bonuses,
-        gross_pay: p.gross_pay,
-        late_deduction: p.late_deduction,
-        undertime_deduction: p.undertime_deduction,
-        absence_deduction: p.absence_deduction,
         sss_deduction: p.sss_deduction,
         philhealth_deduction: p.philhealth_deduction,
         pagibig_deduction: p.pagibig_deduction,
         tax_deduction: p.tax_deduction,
-        other_deductions: p.other_deductions,
-        total_deductions: p.total_deductions,
-        net_pay: p.net_pay,
-        item_breakdown: p.item_breakdown,
       }));
 
     if (rowsToInsert.length > 0) {
@@ -319,6 +324,14 @@ export async function getPayslips(
         item_breakdown: item.item_breakdown,
       };
     });
+
+    // Merge Supabase rows with localPayslipsCache so locally generated/synced payslips are always present
+    const mappedIds = new Set(mapped.map((p) => p.id || p.payslip_number));
+    for (const cached of localPayslipsCache) {
+      if (!mappedIds.has(cached.id) && !mappedIds.has(cached.payslip_number)) {
+        mapped.push(cached);
+      }
+    }
 
     return filterLocalPayslips(mapped, filters, currentUser);
   } catch {
