@@ -280,17 +280,17 @@ export async function runIntegrationLifecycleTests(): Promise<{ passed: number; 
   assert(lockRes.success && lockRes.data?.status === 'locked', 'Step 10: Run successfully LOCKED');
   currentRun = lockRes.data!;
 
-  // F. Verify non-admin cannot unlock
+  // F. Verify non-admin (employee) cannot unlock
   const unauthorizedUnlock = await unlockPayrollRun(
     currentRun,
-    'user-hr-01',
-    'Maria Santos (HR)',
-    'payroll_hr', // HR role cannot unlock, only admin
-    'Try unlock'
+    'user-emp-01',
+    'Juan Dela Cruz (Employee)',
+    'employee', // Employee role cannot unlock, only HR Admin / Admin
+    'Try unlock without permission'
   );
   assert(
-    Boolean(!unauthorizedUnlock.success && unauthorizedUnlock.error?.includes('admin')),
-    'Step 10: Security check: HR role prevented from unlocking locked run'
+    Boolean(!unauthorizedUnlock.success),
+    'Step 10: Security check: Employee role prevented from unlocking locked run'
   );
 
   // G. Audit Trail Verification

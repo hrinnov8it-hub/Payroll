@@ -5,7 +5,9 @@ import {
   DeductionType,
   EarningTypeFormData,
   DeductionTypeFormData,
+  AdminProfile,
 } from '@/types/payroll';
+import { UserRole } from '@/types/auth';
 import {
   fallbackPayrollSettings,
   fallbackEarningTypes,
@@ -16,6 +18,23 @@ import {
 let localSettingsCache: PayrollSettings = { ...fallbackPayrollSettings };
 let localEarningsCache: EarningType[] = [...fallbackEarningTypes];
 let localDeductionsCache: DeductionType[] = [...fallbackDeductionTypes];
+
+let localAdminProfilesCache: AdminProfile[] = [
+  {
+    id: 'profile-super-admin-01',
+    email: 'superadmin.innov8it@gmail.com',
+    full_name: 'Innov8IT System Owner',
+    role: 'super_admin',
+    created_at: '2026-01-01T08:00:00Z',
+  },
+  {
+    id: 'profile-hr-admin-01',
+    email: 'hr.innov8it@gmail.com',
+    full_name: 'HR Administrator',
+    role: 'admin',
+    created_at: '2026-01-01T08:00:00Z',
+  },
+];
 
 /**
  * Fetch payroll settings
@@ -311,6 +330,125 @@ export async function deleteDeductionType(id: string): Promise<{ success: boolea
     return { success: true };
   } catch {
     localDeductionsCache = localDeductionsCache.filter((d) => d.id !== id);
+    return { success: true };
+  }
+}
+
+/**
+ * Fetch all registered Administrator & HR profiles
+ */
+export async function getAdminProfiles(): Promise<AdminProfile[]> {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, email, full_name, role, created_at')
+      .order('created_at', { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      return localAdminProfilesCache;
+    }
+
+    const merged = [...data] as AdminProfile[];
+    // Ensure our default HR & Super admin are preserved if not yet in DB
+    localAdminProfilesCache.forEach((fallbackUser) => {
+      if (!merged.some((u) => u.email.toLowerCase() === fallbackUser.email.toLowerCase())) {
+        merged.push(fallbackUser);
+      }
+    });
+
+    localAdminProfilesCache = merged;
+    return merged;
+  } catch {
+    return localAdminProfilesCache;
+  }
+}
+
+/**
+ * Add or invite an Administrator or HR User profile
+ */
+export async function addAdminProfile(
+  profile: Omit<AdminProfile, 'id' | 'created_at'>
+): Promise<{ success: boolean; data?: AdminProfile; error?: string }> {
+  try {
+    const newId = `profile-${Date.now()}`;
+    const newEntry: AdminProfile = {
+      id: newId,
+      email: profile.email.trim().toLowerCase(),
+      full_name: profile.full_name.trim(),
+      role: profile.role,
+      created_at: new Date().toISOString(),
+    };
+
+    const supabase = createClient();
+    const { data, error } = await (supabase.from('profiles') as any)
+      .insert({
+        id: newId,
+        email: newEntry.email,
+        full_name: newEntry.full_name,
+        role: newEntry.role,
+      })
+      .select('*')
+      .maybeSingle();
+
+    if (error || !data) {
+      // Keep in local cache
+      localAdminProfilesCache = [
+        ...localAdminProfilesCache.filter((u) => u.email !== newEntry.email),
+        newEntry,
+      ];
+      return { success: true, data: newEntry };
+    }
+
+    const created = data as AdminProfile;
+    localAdminProfilesCache = [
+      ...localAdminProfilesCache.filter((u) => u.id !== created.id),
+      created,
+    ];
+    return { success: true, data: created };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to add administrator profile' };
+  }
+}
+
+/**
+ * Update an administrator's access role
+ */
+export async function updateAdminProfileRole(
+  id: string,
+  role: UserRole
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = createClient();
+    await (supabase.from('profiles') as any)
+      .update({ role, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    localAdminProfilesCache = localAdminProfilesCache.map((p) =>
+      p.id === id ? { ...p, role } : p
+    );
+    return { success: true };
+  } catch (err: any) {
+    localAdminProfilesCache = localAdminProfilesCache.map((p) =>
+      p.id === id ? { ...p, role } : p
+    );
+    return { success: true };
+  }
+}
+
+/**
+ * Demote or remove an administrator
+ */
+export async function deleteAdminProfile(
+  id: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = createClient();
+    await supabase.from('profiles').delete().eq('id', id);
+    localAdminProfilesCache = localAdminProfilesCache.filter((p) => p.id !== id);
+    return { success: true };
+  } catch {
+    localAdminProfilesCache = localAdminProfilesCache.filter((p) => p.id !== id);
     return { success: true };
   }
 }

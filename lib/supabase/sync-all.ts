@@ -8,11 +8,10 @@ function isValidUUID(str?: string | null): boolean {
 }
 
 const DEFAULT_DEPARTMENTS = [
-  { name: 'Engineering', code: 'ENG', description: 'Software engineering, platform architecture, and IT operations' },
-  { name: 'Human Resources', code: 'HR', description: 'HR, recruitment, and employee relations' },
-  { name: 'Finance & Accounting', code: 'FIN', description: 'Finance, accounting, and payroll compliance' },
-  { name: 'Operations', code: 'OPS', description: 'Day-to-day business and administrative operations' },
-  { name: 'Sales & Marketing', code: 'MKT', description: 'Client development and growth' },
+  { name: 'Internal Department', code: 'INT', description: 'Internal administration, operations, human resources, and general company affairs' },
+  { name: 'Tech Department', code: 'TECH', description: 'Software development, systems architecture, IT infrastructure, and technical platforms' },
+  { name: 'Creative Department', code: 'CREATIVE', description: 'Creative direction, UI/UX design, multimedia production, and brand design' },
+  { name: 'QA Department', code: 'QA', description: 'Quality assurance, test automation, software verification, and compliance testing' },
 ];
 
 /**
@@ -67,19 +66,23 @@ export async function syncAllDataToSupabase(): Promise<{
     const existingTitles = new Set((existingPos || []).map((p: any) => `${p.department_id}-${p.title}`));
 
     const posToInsert = [
-      { department_id: deptMap.get('ENG'), title: 'Engineering Lead', description: 'Technical lead for platform' },
-      { department_id: deptMap.get('ENG'), title: 'Senior Software Engineer', description: 'Full-stack software development' },
-      { department_id: deptMap.get('ENG'), title: 'Full Stack Developer', description: 'Web application & API development' },
-      { department_id: deptMap.get('ENG'), title: 'QA Automation Engineer', description: 'Automated test suites & quality' },
-      { department_id: deptMap.get('HR'), title: 'HR Manager', description: 'Manages HR department and compliance' },
-      { department_id: deptMap.get('HR'), title: 'HR & Payroll Specialist', description: 'Payroll execution and records' },
-      { department_id: deptMap.get('FIN'), title: 'Finance Manager', description: 'Financial planning and corporate reporting' },
-      { department_id: deptMap.get('FIN'), title: 'Senior Accountant', description: 'Financial audits and taxation' },
-      { department_id: deptMap.get('FIN'), title: 'Payroll Accountant', description: 'Disbursements and bank reconciliation' },
-      { department_id: deptMap.get('OPS'), title: 'Operations Lead', description: 'Customer delivery and services' },
-      { department_id: deptMap.get('OPS'), title: 'Operations Specialist', description: 'Operational workflows' },
-      { department_id: deptMap.get('MKT'), title: 'Account Executive', description: 'Sales and account management' },
-      { department_id: deptMap.get('MKT'), title: 'Marketing Specialist', description: 'Brand marketing and campaigns' },
+      // Internal Department
+      { department_id: deptMap.get('INT'), title: 'CEO', description: 'Chief Executive Officer and strategic executive leadership' },
+      { department_id: deptMap.get('INT'), title: 'Operations Manager', description: 'Directs company operations, internal workflows, and operational execution' },
+      { department_id: deptMap.get('INT'), title: 'HR/Admin', description: 'Human resources management, payroll administration, and office operations' },
+
+      // Tech Department
+      { department_id: deptMap.get('TECH'), title: 'Sr. Tech', description: 'Senior technical lead, software architecture, and systems engineering' },
+      { department_id: deptMap.get('TECH'), title: 'Jr. Tech', description: 'Junior technical engineer, software development, and systems support' },
+
+      // Creative Department
+      { department_id: deptMap.get('CREATIVE'), title: 'Creative Head', description: 'Creative direction, brand identity, and design strategy' },
+      { department_id: deptMap.get('CREATIVE'), title: 'UI/UX Designer', description: 'Designs intuitive user interfaces, wireframes, and design systems' },
+      { department_id: deptMap.get('CREATIVE'), title: 'Video Editor', description: 'Video production, motion graphics, audio editing, and video post-production' },
+
+      // QA Department
+      { department_id: deptMap.get('QA'), title: 'Sr. Tech', description: 'Senior quality assurance specialist and test automation lead' },
+      { department_id: deptMap.get('QA'), title: 'Jr. Tech', description: 'Junior quality assurance tester and validation support' },
     ].filter((p) => p.department_id && !existingTitles.has(`${p.department_id}-${p.title}`));
 
     if (posToInsert.length > 0) {
@@ -179,10 +182,15 @@ export async function syncAllDataToSupabase(): Promise<{
       settingsErr = res.error;
     }
 
-    if (settingsErr) {
-      errors.push(`Settings: ${settingsErr.message}`);
-    } else {
-      stats.settings = true;
+    // 4.5 Sync Cutoff Periods so payroll runs always have valid foreign key references
+    const DEFAULT_PERIODS = [
+      { id: 'a1b2c3d4-0001-4000-8000-000000000001', name: 'October 2026 - 1st Half Cutoff', start_date: '2026-10-01', end_date: '2026-10-15', payout_date: '2026-10-20', status: 'open' },
+      { id: 'a1b2c3d4-0002-4000-8000-000000000002', name: 'October 2026 - 2nd Half Cutoff', start_date: '2026-10-16', end_date: '2026-10-31', payout_date: '2026-11-05', status: 'open' },
+      { id: 'a1b2c3d4-0003-4000-8000-000000000003', name: 'September 2026 - 2nd Half Cutoff', start_date: '2026-09-16', end_date: '2026-09-30', payout_date: '2026-10-05', status: 'closed' },
+    ];
+    const { error: periodErr } = await (supabase.from('payroll_periods') as any).upsert(DEFAULT_PERIODS, { onConflict: 'id' });
+    if (periodErr) {
+      errors.push(`Periods: ${periodErr.message}`);
     }
 
     // 5. Sync Payroll Runs if available in localStorage

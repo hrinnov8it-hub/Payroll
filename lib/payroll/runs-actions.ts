@@ -44,6 +44,11 @@ function persistRunsCache() {
   }
 }
 
+function isValidUUID(str?: string | null): boolean {
+  if (!str) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
+}
+
 function generateUUID(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -297,9 +302,12 @@ export async function createPayrollRun(
         notes: notes?.trim() || null,
       });
 
-      if (!runDbErr) {
-        await (supabase.from('payroll_run_items') as any).insert(
-          items.map((it) => ({
+      if (runDbErr) {
+        console.warn('Supabase payroll_runs insert notice:', runDbErr.message);
+      } else {
+        const itemsToInsert = items
+          .filter((it) => isValidUUID(it.employee_id))
+          .map((it) => ({
             id: it.id,
             payroll_run_id: runId,
             employee_id: it.employee_id,
@@ -340,8 +348,14 @@ export async function createPayrollRun(
             total_deductions: it.total_deductions,
             net_pay: it.net_pay,
             item_breakdown: it.item_breakdown,
-          }))
-        );
+          }));
+
+        if (itemsToInsert.length > 0) {
+          const { error: itemsErr } = await (supabase.from('payroll_run_items') as any).insert(itemsToInsert);
+          if (itemsErr) {
+            console.warn('Supabase payroll_run_items insert notice:', itemsErr.message);
+          }
+        }
       }
     } catch (e) {
       console.warn('Supabase payroll run insert notice:', e);
@@ -438,8 +452,9 @@ export async function recalculatePayrollRun(
       totalDeductions += calc.total_deductions;
       totalNetPay += calc.net_pay;
 
+      const existingItem = run.items?.find((it) => it.employee_id === emp.id);
       const item: PayrollRunItem = {
-        id: `item-${emp.id}-${runId}`,
+        id: (existingItem?.id && isValidUUID(existingItem.id)) ? existingItem.id : generateUUID(),
         payroll_run_id: runId,
         employee_id: emp.id,
         employee_name_snapshot: `${emp.first_name} ${emp.last_name}`,
@@ -500,6 +515,71 @@ export async function recalculatePayrollRun(
     if (idx !== -1) {
       localRunsCache[idx] = updatedRun;
     }
+    persistRunsCache();
+
+    // Persist recalculation updates to Supabase
+    try {
+      const supabase = createClient();
+      await (supabase.from('payroll_runs') as any)
+        .update({
+          total_employees: activeEmployees.length,
+          total_gross_pay: roundToTwoDecimals(totalGrossPay),
+          total_deductions: roundToTwoDecimals(totalDeductions),
+          total_net_pay: roundToTwoDecimals(totalNetPay),
+          updated_at: updatedRun.updated_at,
+        })
+        .eq('id', runId);
+
+      for (const it of updatedItems) {
+        if (isValidUUID(it.employee_id)) {
+          await (supabase.from('payroll_run_items') as any).upsert({
+            id: it.id,
+            payroll_run_id: runId,
+            employee_id: it.employee_id,
+            employee_name_snapshot: it.employee_name_snapshot,
+            employee_number_snapshot: it.employee_number_snapshot,
+            department_snapshot: it.department_snapshot,
+            position_snapshot: it.position_snapshot,
+            basic_salary_snapshot: it.basic_salary_snapshot,
+            hourly_rate_snapshot: it.hourly_rate_snapshot,
+            pay_type_snapshot: it.pay_type_snapshot,
+            days_worked: it.days_worked,
+            regular_hours: it.regular_hours,
+            overtime_hours: it.overtime_hours,
+            night_diff_hours: it.night_diff_hours,
+            holiday_regular_hours: it.holiday_regular_hours,
+            holiday_special_hours: it.holiday_special_hours,
+            rest_day_hours: it.rest_day_hours,
+            late_minutes: it.late_minutes,
+            undertime_minutes: it.undertime_minutes,
+            absent_days: it.absent_days,
+            basic_pay: it.basic_pay,
+            overtime_pay: it.overtime_pay,
+            night_diff_pay: it.night_diff_pay,
+            holiday_pay: it.holiday_pay,
+            rest_day_pay: it.rest_day_pay,
+            allowances: it.allowances,
+            bonuses: it.bonuses,
+            gross_pay: it.gross_pay,
+            late_deduction: it.late_deduction,
+            undertime_deduction: it.undertime_deduction,
+            absence_deduction: it.absence_deduction,
+            sss_deduction: it.sss_deduction || 0,
+            philhealth_deduction: it.philhealth_deduction || 0,
+            pagibig_deduction: it.pagibig_deduction || 0,
+            tax_deduction: it.tax_deduction || 0,
+            employer_contributions: it.employer_contributions || 0,
+            other_deductions: it.other_deductions,
+            total_deductions: it.total_deductions,
+            net_pay: it.net_pay,
+            item_breakdown: it.item_breakdown,
+            updated_at: it.updated_at,
+          }, { onConflict: 'payroll_run_id,employee_id' });
+        }
+      }
+    } catch (e) {
+      console.warn('Supabase recalculate sync notice:', e);
+    }
 
     return { success: true, data: updatedRun };
   } catch (err: any) {
@@ -538,6 +618,21 @@ export async function updatePayrollRunStatus(
     const idx = localRunsCache.findIndex((r) => r.id === runId);
     if (idx !== -1) {
       localRunsCache[idx] = updatedRun;
+    }
+    persistRunsCache();
+
+    // Persist status change to Supabase
+    try {
+      const supabase = createClient();
+      await (supabase.from('payroll_runs') as any)
+        .update({
+          status: newStatus,
+          updated_at: updatedRun.updated_at,
+          processed_at: updatedRun.processed_at,
+        })
+        .eq('id', runId);
+    } catch (e) {
+      console.warn('Supabase update status notice:', e);
     }
 
     return { success: true, data: updatedRun };

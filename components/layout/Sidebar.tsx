@@ -13,16 +13,43 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
-  const [userEmail, setUserEmail] = useState<string>('Innov8IT Administrator');
-  const [userInitials, setUserInitials] = useState<string>('IN8');
+  const [userEmail, setUserEmail] = useState<string>('hr.innov8it@gmail.com');
+  const [userInitials, setUserInitials] = useState<string>('HR');
+  const [userRole, setUserRole] = useState<string>('HR Admin');
 
   useEffect(() => {
+    // 1. Check local session
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('innov8it_current_user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.email) {
+            setUserEmail(parsed.email);
+            const namePart = parsed.email.split('@')[0];
+            setUserInitials(namePart.slice(0, 2).toUpperCase());
+            if (parsed.role === 'super_admin' || parsed.email.toLowerCase().includes('superadmin')) {
+              setUserRole('Super Admin');
+            } else {
+              setUserRole('HR Admin');
+            }
+          }
+        }
+      } catch {}
+    }
+
+    // 2. Check Supabase session
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user?.email) {
         setUserEmail(user.email);
         const namePart = user.email.split('@')[0];
         setUserInitials(namePart.slice(0, 2).toUpperCase());
+        if (user.email.toLowerCase().includes('superadmin')) {
+          setUserRole('Super Admin');
+        } else {
+          setUserRole('HR Admin');
+        }
       }
     });
 
@@ -31,6 +58,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         setUserEmail(session.user.email);
         const namePart = session.user.email.split('@')[0];
         setUserInitials(namePart.slice(0, 2).toUpperCase());
+        if (session.user.email.toLowerCase().includes('superadmin')) {
+          setUserRole('Super Admin');
+        } else {
+          setUserRole('HR Admin');
+        }
       }
     });
 
@@ -38,6 +70,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       subscription.unsubscribe();
     };
   }, []);
+
+  const handleSignOut = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {}
+
+    if (typeof document !== 'undefined') {
+      document.cookie = 'innov8it_auth_user=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      try {
+        localStorage.removeItem('innov8it_current_user');
+        sessionStorage.clear();
+      } catch {}
+    }
+
+    window.location.href = '/login';
+  };
 
   const navItems = [
     {
@@ -128,6 +177,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </svg>
           ),
         },
+        {
+          name: 'Super Admin Settings',
+          href: '/settings?tab=superadmin',
+          badge: 'Root',
+          icon: (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          ),
+        },
       ],
     },
   ];
@@ -171,10 +230,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
         <div className="sidebar-footer">
           <div className="user-avatar">{userInitials}</div>
-          <div className="user-info">
+          <div className="user-info" style={{ flex: 1, minWidth: 0 }}>
             <span className="user-name" title={userEmail}>{userEmail}</span>
-            <span className="user-role">Authenticated</span>
+            <span className="user-role">{userRole}</span>
           </div>
+          <button
+            onClick={handleSignOut}
+            title="Sign Out"
+            style={{
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: 'var(--radius-sm)',
+              color: '#ffffff',
+              padding: '7px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
         </div>
       </aside>
     </>

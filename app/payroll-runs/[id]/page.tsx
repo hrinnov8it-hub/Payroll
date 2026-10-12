@@ -59,7 +59,7 @@ const WORKFLOW_STEPS: PayrollRunStatus[] = [
 // Simulated current user — in Phase 13, this will come from Supabase auth session
 const MOCK_USERS: Record<UserRole, { id: string; name: string; role: UserRole }> = {
   admin: { id: 'user-admin-001', name: 'Admin (System)', role: 'admin' },
-  payroll_hr: { id: 'user-hr-001', name: 'Maria Santos (HR)', role: 'payroll_hr' },
+  payroll_hr: { id: 'user-hr-001', name: 'Maria Santos (HR Admin)', role: 'payroll_hr' },
   employee: { id: 'user-emp-001', name: 'Juan Dela Cruz', role: 'employee' },
 };
 
@@ -357,7 +357,7 @@ export default function PayrollRunDetailPage() {
                 {run.status.toUpperCase()}
               </Badge>
               <span className={`role-badge role-${activeRole}`}>
-                {activeRole === 'admin' ? '🛡️ Admin' : activeRole === 'payroll_hr' ? '📊 HR' : '👤 Employee'}
+                {activeRole === 'admin' ? '🛡️ Admin' : activeRole === 'payroll_hr' ? '🛡️ HR Admin' : '👤 Employee'}
               </span>
             </div>
             <div style={{ marginTop: '0.4rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
@@ -565,9 +565,22 @@ export default function PayrollRunDetailPage() {
                 </Button>
               )}
 
-              {run.status === 'locked' && (
+              {run.status === 'locked' && permissions.canUnlock && (
+                <Button
+                  id="btn-unlock"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowUnlockModal(true)}
+                  isLoading={actionLoading}
+                  style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+                >
+                  🔓 Unlock Run (HR Admin)
+                </Button>
+              )}
+
+              {run.status === 'locked' && !permissions.canUnlock && (
                 <div style={{ fontSize: '0.85rem', color: '#991b1b', fontWeight: 600, padding: '0.4rem 0.75rem', background: '#fef2f2', borderRadius: 'var(--radius-sm)', border: '1px solid #fecaca' }}>
-                  🔒 Run is locked. Only admins may unlock.
+                  🔒 Run is locked. Historical records preserved.
                 </div>
               )}
             </div>

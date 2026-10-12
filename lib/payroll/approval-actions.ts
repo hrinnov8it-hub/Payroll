@@ -20,6 +20,8 @@ import {
   PayrollAuditAction,
   ApprovalRecord,
 } from '@/types/payroll';
+import { createClient } from '@/lib/supabase/client';
+import { syncPayslipsFromRun } from '@/lib/payslips/actions';
 
 // ==============================================================================
 // In-memory audit event store
@@ -41,7 +43,7 @@ const ROLE_PERMISSIONS: Record<UserRole, {
   canReturnToDraft: boolean;
 }> = {
   admin: { canApprove: true, canLock: true, canUnlock: true, canReturnToDraft: true },
-  payroll_hr: { canApprove: true, canLock: true, canUnlock: false, canReturnToDraft: true },
+  payroll_hr: { canApprove: true, canLock: true, canUnlock: true, canReturnToDraft: true },
   employee: { canApprove: false, canLock: false, canUnlock: false, canReturnToDraft: false },
 };
 
@@ -82,6 +84,20 @@ export interface ApprovalActionResult {
   auditEvent?: PayrollAuditEvent;
 }
 
+async function persistRunToSupabase(runId: string, updates: Record<string, any>) {
+  try {
+    const supabase = createClient();
+    const { error } = await (supabase.from('payroll_runs') as any)
+      .update(updates)
+      .eq('id', runId);
+    if (error) {
+      console.warn('Supabase update notice for run', runId, error.message);
+    }
+  } catch (err) {
+    console.warn('Supabase persistence error:', err);
+  }
+}
+
 export async function submitForReview(
   run: PayrollRunWithItems,
   performedBy: string,
@@ -113,6 +129,12 @@ export async function submitForReview(
   });
 
   appendAuditEvent(event);
+  await persistRunToSupabase(run.id, {
+    status: 'review',
+    review_notes: updatedRun.review_notes,
+    updated_at: updatedRun.updated_at,
+  });
+
   return { success: true, data: updatedRun, auditEvent: event };
 }
 
@@ -152,6 +174,11 @@ export async function returnToDraft(
   });
 
   appendAuditEvent(event);
+  await persistRunToSupabase(run.id, {
+    status: 'draft',
+    updated_at: updatedRun.updated_at,
+  });
+
   return { success: true, data: updatedRun, auditEvent: event };
 }
 
@@ -196,6 +223,14 @@ export async function approvePayrollRun(
   });
 
   appendAuditEvent(event);
+  await persistRunToSupabase(run.id, {
+    status: 'approved',
+    approved_by: performedBy,
+    approved_by_name: performedByName,
+    approved_at: approvedAt,
+    updated_at: approvedAt,
+  });
+
   return { success: true, data: updatedRun, auditEvent: event };
 }
 
@@ -238,6 +273,19 @@ export async function markAsPaid(
   });
 
   appendAuditEvent(event);
+  await persistRunToSupabase(run.id, {
+    status: 'paid',
+    processed_by: performedBy,
+    processed_at: paidAt,
+    updated_at: paidAt,
+  });
+
+  try {
+    await syncPayslipsFromRun(run.id);
+  } catch (err) {
+    console.warn('Notice: Failed to sync payslips upon markAsPaid:', err);
+  }
+
   return { success: true, data: updatedRun, auditEvent: event };
 }
 
@@ -281,6 +329,14 @@ export async function lockPayrollRun(
   });
 
   appendAuditEvent(event);
+  await persistRunToSupabase(run.id, {
+    status: 'locked',
+    locked_by: performedBy,
+    locked_by_name: performedByName,
+    locked_at: lockedAt,
+    updated_at: lockedAt,
+  });
+
   return { success: true, data: updatedRun, auditEvent: event };
 }
 
@@ -295,10 +351,11 @@ export async function unlockPayrollRun(
   role: UserRole,
   unlockReason: string
 ): Promise<ApprovalActionResult> {
-  if (role !== 'admin') {
+  const permissions = getRolePermissions(role);
+  if (!permissions.canUnlock) {
     return {
       success: false,
-      error: '🔒 Unlock requires ADMIN permission. This action is restricted to system administrators only.',
+      error: '🔒 Unlock requires HR Admin permission. This action is restricted to payroll administrators.',
     };
   }
 
@@ -336,6 +393,14 @@ export async function unlockPayrollRun(
   });
 
   appendAuditEvent(event);
+  await persistRunToSupabase(run.id, {
+    status: 'paid',
+    locked_by: null,
+    locked_by_name: null,
+    locked_at: null,
+    updated_at: updatedRun.updated_at,
+  });
+
   return { success: true, data: updatedRun, auditEvent: event };
 }
 
@@ -369,6 +434,11 @@ export async function addReviewNote(
   });
 
   appendAuditEvent(event);
+  await persistRunToSupabase(run.id, {
+    review_notes: note.trim(),
+    updated_at: updatedRun.updated_at,
+  });
+
   return { success: true, data: updatedRun, auditEvent: event };
 }
 

@@ -39,6 +39,21 @@ function persistPayslipsCache() {
   }
 }
 
+function isValidUUID(str?: string | null): boolean {
+  if (!str) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
+}
+
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 /**
  * Sync / generate payslips from a completed or approved payroll run
  */
@@ -70,7 +85,7 @@ export async function syncPayslipsFromRun(runId: string): Promise<Payslip[]> {
     }
 
     const newPayslip: Payslip = {
-      id: `ps-${item.id}`,
+      id: generateUUID(),
       payroll_run_id: run.id,
       payroll_run_item_id: item.id,
       employee_id: item.employee_id,
@@ -139,6 +154,48 @@ export async function syncPayslipsFromRun(runId: string): Promise<Payslip[]> {
     persistPayslipsCache();
     return newPayslip;
   });
+
+  // Attempt to persist payslips to Supabase
+  try {
+    const supabase = createClient();
+    const rowsToInsert = generated
+      .filter((p) => isValidUUID(p.payroll_run_id) && isValidUUID(p.payroll_run_item_id) && isValidUUID(p.employee_id))
+      .map((p) => ({
+        id: p.id,
+        payroll_run_id: p.payroll_run_id,
+        payroll_run_item_id: p.payroll_run_item_id,
+        employee_id: p.employee_id,
+        payslip_number: p.payslip_number,
+        status: p.status,
+        issue_date: p.issue_date,
+        notes: p.notes,
+        basic_pay: p.basic_pay,
+        overtime_pay: p.overtime_pay,
+        night_diff_pay: p.night_diff_pay,
+        holiday_pay: p.holiday_pay,
+        rest_day_pay: p.rest_day_pay,
+        allowances: p.allowances,
+        bonuses: p.bonuses,
+        gross_pay: p.gross_pay,
+        late_deduction: p.late_deduction,
+        undertime_deduction: p.undertime_deduction,
+        absence_deduction: p.absence_deduction,
+        sss_deduction: p.sss_deduction,
+        philhealth_deduction: p.philhealth_deduction,
+        pagibig_deduction: p.pagibig_deduction,
+        tax_deduction: p.tax_deduction,
+        other_deductions: p.other_deductions,
+        total_deductions: p.total_deductions,
+        net_pay: p.net_pay,
+        item_breakdown: p.item_breakdown,
+      }));
+
+    if (rowsToInsert.length > 0) {
+      await (supabase.from('payslips') as any).upsert(rowsToInsert, { onConflict: 'payroll_run_item_id' });
+    }
+  } catch (err) {
+    console.warn('Supabase payslips persist notice:', err);
+  }
 
   return generated;
 }

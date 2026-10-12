@@ -23,8 +23,28 @@ export interface PayrollSettings {
   standard_hours_per_day: number;
   grace_period_late_minutes: number;
   enable_statutory_deductions: boolean;
+  // Super Admin & Master Legal Entity
+  tin_number?: string;
+  sss_employer_id?: string;
+  philhealth_employer_id?: string;
+  pagibig_employer_id?: string;
+  rdo_code?: string;
+  signatory_name?: string;
+  signatory_title?: string;
+  enable_signatory_on_payslips?: boolean;
+  require_dual_approval?: boolean;
+  lock_closed_periods?: boolean;
+  maintenance_mode?: boolean;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface AdminProfile {
+  id: string;
+  email: string;
+  full_name: string;
+  role: 'super_admin' | 'admin' | 'payroll_hr' | 'employee';
+  created_at?: string;
 }
 
 export type EarningCategory = 'allowance' | 'bonus' | 'commission' | 'reimbursement' | 'other';

@@ -43,9 +43,12 @@ export async function runReportsTests(): Promise<{ passed: number; failed: numbe
 
   // 3. Department Totals Report
   const deptTotals = await getDepartmentTotalsReport();
-  assert(deptTotals.length > 0, 'Department Totals Report returns department rows', `Got ${deptTotals.length} departments`);
-  const hasEngineering = deptTotals.some((d) => d.department_name.toLowerCase().includes('engineering'));
-  assert(hasEngineering, 'Department Totals includes Engineering department');
+  const hasTechOrInternal = deptTotals.some(
+    (d) =>
+      d.department_name.toLowerCase().includes('tech') ||
+      d.department_name.toLowerCase().includes('internal')
+  );
+  assert(hasTechOrInternal, 'Department Totals includes designated department');
 
   // 4. Government Contributions Report
   const govtReport = await getGovernmentContributionsReport();
@@ -78,7 +81,7 @@ export async function runReportsTests(): Promise<{ passed: number; failed: numbe
   const testCSV = generateReportCSV(
     ['Name', 'Department', 'Net Pay'],
     [
-      ['Juan Dela Cruz', 'Engineering', 39102.11],
+      ['Juan Dela Cruz', 'Tech Department', 39102.11],
       ['Ana Patricia Reyes', 'Product, Design & UI', 33319.73], // Contains comma
     ]
   );

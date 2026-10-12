@@ -8,6 +8,7 @@ import { GeneralSettingsTab } from '@/components/settings/GeneralSettingsTab';
 import { RatesSettingsTab } from '@/components/settings/RatesSettingsTab';
 import { EarningsSettingsTab } from '@/components/settings/EarningsSettingsTab';
 import { DeductionsSettingsTab } from '@/components/settings/DeductionsSettingsTab';
+import { SuperAdminSettingsTab } from '@/components/settings/SuperAdminSettingsTab';
 import { PayrollSettings, EarningType, DeductionType } from '@/types/payroll';
 import {
   getPayrollSettings,
@@ -15,7 +16,7 @@ import {
   getDeductionTypes,
 } from '@/lib/payroll/settings-actions';
 
-type SettingsTab = 'general' | 'rates' | 'earnings' | 'deductions';
+type SettingsTab = 'general' | 'rates' | 'earnings' | 'deductions' | 'superadmin';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
@@ -29,6 +30,15 @@ export default function SettingsPage() {
     async function loadAllSettings() {
       try {
         setLoading(true);
+        // Check URL query param for default tab
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const tabParam = params.get('tab');
+          if (tabParam === 'superadmin' || tabParam === 'rates' || tabParam === 'earnings' || tabParam === 'deductions') {
+            setActiveTab(tabParam as SettingsTab);
+          }
+        }
+
         const [loadedSettings, loadedEarnings, loadedDeductions] = await Promise.all([
           getPayrollSettings(),
           getEarningTypes(),
@@ -113,6 +123,18 @@ export default function SettingsPage() {
             Deduction & Loan Types
             <span className="tab-pill-badge">{deductions.length}</span>
           </button>
+
+          <button
+            type="button"
+            className={`tab-pill ${activeTab === 'superadmin' ? 'active' : ''}`}
+            onClick={() => setActiveTab('superadmin')}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            Super Admin
+            <span className="tab-pill-badge" style={{ backgroundColor: 'var(--brand-dark-blue)', color: '#ffffff', fontWeight: 700 }}>Root</span>
+          </button>
         </div>
       </div>
 
@@ -146,6 +168,13 @@ export default function SettingsPage() {
 
           {activeTab === 'deductions' && (
             <DeductionsSettingsTab initialDeductions={deductions} />
+          )}
+
+          {activeTab === 'superadmin' && settings && (
+            <SuperAdminSettingsTab
+              initialSettings={settings}
+              onSaved={(updated) => setSettings(updated)}
+            />
           )}
         </>
       )}

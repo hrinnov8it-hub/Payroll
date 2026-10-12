@@ -23,6 +23,18 @@ export const fallbackPayrollSettings: PayrollSettings = {
   standard_hours_per_day: 8,
   grace_period_late_minutes: 10,
   enable_statutory_deductions: true,
+  // Super Admin & Master Legal Entity
+  tin_number: '009-876-543-000',
+  sss_employer_id: '03-9123456-7',
+  philhealth_employer_id: '19-025487123-1',
+  pagibig_employer_id: '2049-8172-9901',
+  rdo_code: '044',
+  signatory_name: 'Maria R. Santos',
+  signatory_title: 'Head of Human Resources',
+  enable_signatory_on_payslips: true,
+  require_dual_approval: true,
+  lock_closed_periods: true,
+  maintenance_mode: false,
 };
 
 export const fallbackEarningTypes: EarningType[] = [];

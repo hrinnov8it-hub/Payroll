@@ -68,8 +68,18 @@ function isValidUUID(str?: string | null): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
 }
 
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 /**
- * Fetch all departments
+ * Fetch all departments (Internal Department, Tech Department, Creative Department, QA Department)
  */
 export async function getDepartments(): Promise<Department[]> {
   try {
@@ -83,7 +93,13 @@ export async function getDepartments(): Promise<Department[]> {
       return fallbackDepartments;
     }
 
-    return data as Department[];
+    const validNames = ['Internal Department', 'Tech Department', 'Creative Department', 'QA Department'];
+    const validCodes = ['INT', 'TECH', 'CREATIVE', 'QA'];
+    const filtered = (data as Department[]).filter(
+      (d) => validNames.includes(d.name) || validCodes.includes(d.code)
+    );
+
+    return filtered.length > 0 ? filtered : fallbackDepartments;
   } catch {
     return fallbackDepartments;
   }
@@ -93,6 +109,18 @@ export async function getDepartments(): Promise<Department[]> {
  * Fetch positions, optionally filtered by department
  */
 export async function getPositions(departmentId?: string): Promise<Position[]> {
+  const designatedTitles = [
+    'CEO',
+    'Operations Manager',
+    'Operations Mananger',
+    'HR/Admin',
+    'Sr. Tech',
+    'Jr. Tech',
+    'Creative Head',
+    'UI/UX Designer',
+    'Video Editor',
+  ];
+
   try {
     const supabase = createClient();
     let query = supabase.from('positions').select('*').order('title', { ascending: true });
@@ -111,7 +139,19 @@ export async function getPositions(departmentId?: string): Promise<Position[]> {
       return fallbackPositions;
     }
 
-    return data as Position[];
+    const matched = (data as Position[]).filter((p) =>
+      designatedTitles.some((t) => t.toLowerCase() === p.title.toLowerCase())
+    );
+
+    if (matched.length > 0) {
+      return matched;
+    }
+
+    if (departmentId) {
+      const filtered = fallbackPositions.filter((p) => p.department_id === departmentId);
+      return filtered.length > 0 ? filtered : fallbackPositions;
+    }
+    return fallbackPositions;
   } catch {
     if (departmentId) {
       const filtered = fallbackPositions.filter((p) => p.department_id === departmentId);
@@ -321,7 +361,7 @@ export async function createEmployee(
       const pos = positions.find((p) => p.id === data.position_id);
 
       const newRecord: EmployeeWithRelations = {
-        id: `emp-local-${Date.now()}`,
+        id: generateUUID(),
         ...payload,
         department_id: data.department_id,
         position_id: data.position_id,
