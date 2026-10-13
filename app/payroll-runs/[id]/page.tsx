@@ -126,7 +126,6 @@ export default function PayrollRunDetailPage() {
   // Phase 9: Review & Approval state
   const [activeRole, setActiveRole] = useState<UserRole>('payroll_hr');
   const [userName, setUserName] = useState<string>('Maria Santos (HR Admin)');
-  const [isSavingName, setIsSavingName] = useState<boolean>(false);
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [editingNameValue, setEditingNameValue] = useState<string>('');
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
@@ -316,27 +315,6 @@ export default function PayrollRunDetailPage() {
       }
     } finally {
       setActionLoading(false);
-    }
-  };
-
-  const handleSaveUserName = async () => {
-    if (!userName.trim()) return;
-    setIsSavingName(true);
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('innov8it_user_name', userName.trim());
-      }
-      if (run) {
-        await updateRunApproverName(run.id, userName.trim());
-        refreshAuditData(run.id);
-        const refreshed = await getPayrollRunById(run.id);
-        if (refreshed) setRun(refreshed);
-      }
-      showNotification('success', `Reviewer / Approver name saved as "${userName.trim()}".`);
-    } catch {
-      showNotification('error', 'Failed to save approver name.');
-    } finally {
-      setIsSavingName(false);
     }
   };
 
@@ -613,39 +591,6 @@ export default function PayrollRunDetailPage() {
                 )}
               </div>
             )}
-
-            {/* Reviewer / Approver Name customizer */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              marginBottom: '1rem',
-              padding: '0.75rem 1rem',
-              background: '#f8fafc',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid #e2e8f0',
-              flexWrap: 'wrap'
-            }}>
-              <span style={{ fontSize: '0.84rem', fontWeight: 600, color: '#334155' }}>
-                ✍️ Reviewer / Approver Name:
-              </span>
-              <div style={{ width: '280px' }}>
-                <Input
-                  id="approver-name-input"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  placeholder="Enter your name..."
-                />
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSaveUserName}
-                isLoading={isSavingName}
-              >
-                💾 Save Name
-              </Button>
-            </div>
 
             {/* Approval Action Buttons */}
             <div className="approval-action-row">
