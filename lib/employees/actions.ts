@@ -359,35 +359,15 @@ export async function createEmployee(
       .single();
 
     if (error) {
-      console.warn('Supabase employee creation note (using local cache):', error.message);
-      // Fallback for offline / unmigrated dev environment
-      const depts = await getDepartments();
-      const positions = await getPositions();
-      const dept = depts.find((d) => d.id === data.department_id);
-      const pos = positions.find((p) => p.id === data.position_id);
-
-      const newRecord: EmployeeWithRelations = {
-        id: generateUUID(),
-        ...payload,
-        department_id: data.department_id,
-        position_id: data.position_id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        department: dept || null,
-        position: pos || null,
-      };
-
-      localEmployeesCache = [newRecord, ...localEmployeesCache];
-      persistEmployeesCache();
-      return { success: true, data: newRecord };
+      // Return the real Supabase error so the UI can display it
+      console.error('Supabase employee creation failed:', error.message, error.code, error.details);
+      return { success: false, error: `Could not save employee to database: ${error.message}` };
     }
 
     const createdRecord = inserted as unknown as EmployeeWithRelations;
     localEmployeesCache = [createdRecord, ...localEmployeesCache.filter((e) => e.employee_number !== data.employee_number)];
     persistEmployeesCache();
     return { success: true, data: createdRecord };
-
-    return { success: true, data: inserted as unknown as EmployeeWithRelations };
   } catch (err: any) {
     return { success: false, error: err?.message || 'Failed to create employee.' };
   }
