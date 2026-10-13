@@ -40,6 +40,11 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
   const [policySaveSuccess, setPolicySaveSuccess] = useState(false);
   const [policySaveError, setPolicySaveError] = useState<string | null>(null);
 
+  // DB migration state
+  const [migrationStatus, setMigrationStatus] = useState<'unknown' | 'needed' | 'done'>('unknown');
+  const [isRunningMigration, setIsRunningMigration] = useState(false);
+  const [migrationResult, setMigrationResult] = useState<string | null>(null);
+
   // Cloud sync states
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
@@ -201,6 +206,26 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
     }
   };
 
+  // Run DB schema migration to add statutory columns
+  const handleRunMigration = async () => {
+    setIsRunningMigration(true);
+    setMigrationResult(null);
+    try {
+      const res = await fetch('/api/migrate', { method: 'POST' });
+      const json = await res.json();
+      if (json.success) {
+        setMigrationStatus('done');
+        setMigrationResult('✅ Database migration successful! All settings will now be saved directly to Supabase.');
+      } else {
+        setMigrationResult(`❌ Migration failed: ${json.error}`);
+      }
+    } catch (err: any) {
+      setMigrationResult(`❌ Error: ${err?.message || 'Could not reach migration endpoint'}`);
+    } finally {
+      setIsRunningMigration(false);
+    }
+  };
+
   // Trigger Supabase Cloud Sync
   const handleForceSync = async () => {
     setIsSyncing(true);
@@ -284,6 +309,44 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
           </p>
         </div>
       </div>
+
+      {/* DB Migration Panel — shown until migration is confirmed done */}
+      {migrationStatus !== 'done' && (
+        <div style={{
+          background: '#fffbeb',
+          border: '1px solid #f59e0b',
+          borderRadius: 'var(--radius-lg)',
+          padding: '1rem 1.25rem',
+          marginBottom: '1.5rem',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontWeight: 700, color: '#92400e', fontSize: '0.9rem', marginBottom: '0.25rem' }}>
+                ⚠️ Database Schema Migration Required
+              </div>
+              <div style={{ fontSize: '0.82rem', color: '#78350f', lineHeight: 1.5 }}>
+                The Supabase database is missing statutory columns (TIN, SSS, PhilHealth, etc.). Until the migration is run, settings are saved to localStorage only.
+                {' '}To enable full database persistence, add <strong>SUPABASE_SERVICE_ROLE_KEY</strong> to your <code>.env.local</code> file, then click the button.
+              </div>
+              {migrationResult && (
+                <div style={{ marginTop: '0.5rem', fontSize: '0.82rem', fontWeight: 600 }}>
+                  {migrationResult}
+                </div>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleRunMigration}
+              disabled={isRunningMigration}
+              style={{ borderColor: '#f59e0b', color: '#92400e', whiteSpace: 'nowrap', flexShrink: 0 }}
+            >
+              {isRunningMigration ? 'Running...' : '🔧 Run Database Migration'}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Card 1: Master Employer Legal & Tax Registration */}
       <form onSubmit={handleSaveTax}>
