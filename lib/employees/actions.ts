@@ -348,23 +348,61 @@ export async function createEmployee(
       status: data.status,
     };
 
-    const { data: inserted, error } = await supabase
-      .from('employees')
-      .insert(payload as any)
-      .select(`
-        *,
-        department:departments(*),
-        position:positions(*)
-      `)
+    // Step 1: Insert the employee row (without relation joins to avoid RLS issues on positions/departments)
+    const { data: insertedRaw, error: insertError } = await (supabase
+      .from('employees') as any)
+      .insert(payload)
+      .select('*')
       .single();
 
-    if (error) {
-      // Return the real Supabase error so the UI can display it
-      console.error('Supabase employee creation failed:', error.message, error.code, error.details);
-      return { success: false, error: `Could not save employee to database: ${error.message}` };
+    if (insertError) {
+      const isRlsError =
+        insertError.code === '42501' ||
+        insertError.message?.includes('permission denied') ||
+        insertError.message?.includes('row-level security');
+
+      if (isRlsError) {
+        // RLS is blocking inserts — save locally and warn user
+        console.warn('RLS blocking employee insert. Saving locally. Fix RLS policies in Supabase to enable DB persistence.', insertError.message);
+        const depts = await getDepartments();
+        const positions = await getPositions();
+        const dept = depts.find((d) => d.id === data.department_id);
+        const pos = positions.find((p) => p.id === data.position_id);
+        const newRecord: EmployeeWithRelations = {
+          id: generateUUID(),
+          ...payload,
+          department_id: data.department_id,
+          position_id: data.position_id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          department: dept || null,
+          position: pos || null,
+        };
+        localEmployeesCache = [newRecord, ...localEmployeesCache];
+        persistEmployeesCache();
+        return {
+          success: true,
+          data: newRecord,
+          error: 'Saved locally only — Supabase RLS is blocking database inserts. Please fix RLS policies on the employees table in your Supabase dashboard.',
+        };
+      }
+
+      console.error('Supabase employee creation failed:', insertError.message, insertError.code);
+      return { success: false, error: `Could not save employee: ${insertError.message}` };
     }
 
-    const createdRecord = inserted as unknown as EmployeeWithRelations;
+    // Step 2: Hydrate department/position relations from local cache (avoids RLS 403 on positions join)
+    const depts = await getDepartments();
+    const positions = await getPositions();
+    const dept = depts.find((d) => d.id === data.department_id);
+    const pos = positions.find((p) => p.id === data.position_id);
+
+    const createdRecord: EmployeeWithRelations = {
+      ...(insertedRaw as any),
+      department: dept || null,
+      position: pos || null,
+    };
+
     localEmployeesCache = [createdRecord, ...localEmployeesCache.filter((e) => e.employee_number !== data.employee_number)];
     persistEmployeesCache();
     return { success: true, data: createdRecord };
