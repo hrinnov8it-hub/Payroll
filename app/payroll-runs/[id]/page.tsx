@@ -142,6 +142,11 @@ export default function PayrollRunDetailPage() {
   const [showReturnModal, setShowReturnModal] = useState<boolean>(false);
   const [returnReason, setReturnReason] = useState<string>('');
 
+  // Signatory loaded from payroll settings
+  const [signatoryName, setSignatoryName] = useState<string>('');
+  const [signatoryTitle, setSignatoryTitle] = useState<string>('');
+  const [showSignatory, setShowSignatory] = useState<boolean>(false);
+
   // Initial user name from localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -160,6 +165,19 @@ export default function PayrollRunDetailPage() {
         }
       } catch {}
     }
+  }, []);
+
+  // Load signatory from settings
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('innov8it_payroll_settings');
+      if (stored) {
+        const s = JSON.parse(stored);
+        setSignatoryName(s.signatory_name || '');
+        setSignatoryTitle(s.signatory_title || '');
+        setShowSignatory(s.enable_signatory_on_payslips ?? false);
+      }
+    } catch {}
   }, []);
 
   const currentUser = { ...MOCK_USERS[activeRole], name: userName };
@@ -726,7 +744,23 @@ export default function PayrollRunDetailPage() {
         )}
 
 
-
+        {/* Authorized Signatory Panel — reflects Super Admin Settings */}
+        {showSignatory && signatoryName && (
+          <Card style={{ marginBottom: '1.5rem', padding: '1.25rem', borderLeft: '3px solid var(--brand-blue)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ fontSize: '1.3rem' }}>✍️</span>
+              <div>
+                <div style={{ fontWeight: 700, color: 'var(--brand-dark-blue)', fontSize: '0.9rem' }}>
+                  Authorized Signatory
+                </div>
+                <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>{signatoryName}</div>
+                {signatoryTitle && (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{signatoryTitle}</div>
+                )}
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Audit Log Timeline */}
         {auditEvents.length > 0 && (

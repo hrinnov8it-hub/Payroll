@@ -2,7 +2,7 @@ import { PayrollSettings, EarningType, DeductionType } from '@/types/payroll';
 
 export const fallbackPayrollSettings: PayrollSettings = {
   id: 'settings-innov8it-default',
-  company_name: 'Innov8IT Corporation',
+  company_name: '',
   pay_frequency: 'semi_monthly',
   first_cutoff_start_day: 1,
   first_cutoff_end_day: 15,
@@ -23,19 +23,20 @@ export const fallbackPayrollSettings: PayrollSettings = {
   standard_hours_per_day: 8,
   grace_period_late_minutes: 10,
   enable_statutory_deductions: true,
-  // Super Admin & Master Legal Entity
-  tin_number: '009-876-543-000',
-  sss_employer_id: '03-9123456-7',
-  philhealth_employer_id: '19-025487123-1',
-  pagibig_employer_id: '2049-8172-9901',
-  rdo_code: '044',
-  signatory_name: 'Maria R. Santos',
-  signatory_title: 'Head of Human Resources',
-  enable_signatory_on_payslips: true,
+  // Super Admin & Master Legal Entity — left blank; admin must encode manually
+  tin_number: '',
+  sss_employer_id: '',
+  philhealth_employer_id: '',
+  pagibig_employer_id: '',
+  rdo_code: '',
+  signatory_name: '',
+  signatory_title: '',
+  enable_signatory_on_payslips: false,
   require_dual_approval: true,
   lock_closed_periods: true,
   maintenance_mode: false,
 };
+
 
 export const fallbackEarningTypes: EarningType[] = [];
 

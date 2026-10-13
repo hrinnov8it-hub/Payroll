@@ -1,7 +1,11 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { Payslip } from '@/types/payslip';
 import { Logo } from '@/components/ui/Logo';
 import { getItemizedDeductions } from '@/lib/payroll/item-deductions';
+
+const SETTINGS_KEY = 'innov8it_payroll_settings';
 
 interface PayslipDocumentProps {
   payslip: Payslip;
@@ -13,6 +17,26 @@ export const PayslipDocument: React.FC<PayslipDocumentProps> = ({
   showWatermark = false,
 }) => {
   const deductions = getItemizedDeductions(payslip);
+
+  const [companyName, setCompanyName] = useState('');
+  const [tinNumber, setTinNumber] = useState('');
+  const [signatoryName, setSignatoryName] = useState('');
+  const [signatoryTitle, setSignatoryTitle] = useState('');
+  const [showSignatory, setShowSignatory] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(SETTINGS_KEY);
+      if (stored) {
+        const s = JSON.parse(stored);
+        setCompanyName(s.company_name || '');
+        setTinNumber(s.tin_number || '');
+        setSignatoryName(s.signatory_name || '');
+        setSignatoryTitle(s.signatory_title || '');
+        setShowSignatory(s.enable_signatory_on_payslips ?? false);
+      }
+    } catch {}
+  }, []);
 
   const formatCurrency = (val?: number) => {
     const num = Number(val || 0);
@@ -46,13 +70,17 @@ export const PayslipDocument: React.FC<PayslipDocumentProps> = ({
               <Logo size="lg" theme="light" />
             </div>
             <div className="payslip-company-info">
-              <h2 className="payslip-company-name">Innov8IT Solutions Inc.</h2>
+              <h2 className="payslip-company-name">{companyName || 'Innov8IT Solutions Inc.'}</h2>
               <p className="payslip-company-sub">
                 Enterprise Payroll & Technology Services
               </p>
-              <p className="payslip-company-meta">
-                Metro Manila, Philippines • Tax ID: 009-876-543-000
-              </p>
+              {tinNumber ? (
+                <p className="payslip-company-meta">
+                  Metro Manila, Philippines &bull; Tax ID: {tinNumber}
+                </p>
+              ) : (
+                <p className="payslip-company-meta">Metro Manila, Philippines</p>
+              )}
             </div>
           </div>
 
@@ -398,11 +426,23 @@ export const PayslipDocument: React.FC<PayslipDocumentProps> = ({
               <span className="payslip-sig-label">Employee Signature / Acknowledgment</span>
               <span className="payslip-sig-sub">{payslip.employee_name}</span>
             </div>
-            <div className="payslip-signature-box">
-              <div className="payslip-sig-line" />
-              <span className="payslip-sig-label">Authorized HR / Finance Officer</span>
-              <span className="payslip-sig-sub">Innov8IT Payroll Department</span>
-            </div>
+            {showSignatory && signatoryName && (
+              <div className="payslip-signature-box">
+                <div className="payslip-sig-line" />
+                <span className="payslip-sig-label">Authorized Signatory</span>
+                <span className="payslip-sig-sub">{signatoryName}</span>
+                {signatoryTitle && (
+                  <span className="payslip-sig-sub" style={{ fontSize: '0.72rem', color: '#6b7280' }}>{signatoryTitle}</span>
+                )}
+              </div>
+            )}
+            {!showSignatory && (
+              <div className="payslip-signature-box">
+                <div className="payslip-sig-line" />
+                <span className="payslip-sig-label">Authorized HR / Finance Officer</span>
+                <span className="payslip-sig-sub">Innov8IT Payroll Department</span>
+              </div>
+            )}
           </div>
         </footer>
       </div>

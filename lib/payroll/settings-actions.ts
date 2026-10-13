@@ -38,8 +38,30 @@ const SUPABASE_PAYROLL_SETTINGS_COLUMNS = new Set([
   'standard_working_days_per_year',
   'standard_hours_per_day',
   'grace_period_late_minutes',
+  // Statutory & Signatory fields — will be saved to DB once schema is migrated
+  'tin_number',
+  'sss_employer_id',
+  'philhealth_employer_id',
+  'pagibig_employer_id',
+  'rdo_code',
+  'signatory_name',
+  'signatory_title',
+  'enable_signatory_on_payslips',
+  'require_dual_approval',
+  'lock_closed_periods',
+  'maintenance_mode',
   'created_at',
   'updated_at',
+]);
+
+const STALE_MOCK_VALUES = new Set([
+  '009-876-543-000', // old mock TIN
+  '03-9123456-7',    // old mock SSS
+  '19-025487123-1',  // old mock PhilHealth
+  '2049-8172-9901',  // old mock Pag-IBIG
+  '044',             // old mock RDO (only if other stale values also present)
+  'Maria R. Santos', // old mock signatory
+  'Innov8IT Corporation', // old mock company name
 ]);
 
 function loadLocalSettings(): PayrollSettings {
@@ -49,6 +71,27 @@ function loadLocalSettings(): PayrollSettings {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed && typeof parsed === 'object') {
+          // Detect stale mock data: if TIN/SSS/PhilHealth match old hardcoded values, clear them
+          const isStale =
+            parsed.tin_number === '009-876-543-000' &&
+            parsed.sss_employer_id === '03-9123456-7' &&
+            parsed.philhealth_employer_id === '19-025487123-1';
+          if (isStale) {
+            const cleaned = {
+              ...parsed,
+              tin_number: '',
+              sss_employer_id: '',
+              philhealth_employer_id: '',
+              pagibig_employer_id: '',
+              rdo_code: '',
+              signatory_name: '',
+              signatory_title: '',
+              enable_signatory_on_payslips: false,
+              company_name: parsed.company_name === 'Innov8IT Corporation' ? '' : (parsed.company_name || ''),
+            };
+            window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(cleaned));
+            return { ...fallbackPayrollSettings, ...cleaned };
+          }
           return { ...fallbackPayrollSettings, ...parsed };
         }
       }
@@ -107,23 +150,24 @@ export async function getPayrollSettings(): Promise<PayrollSettings> {
     }
 
     const dbRow = data as unknown as Partial<PayrollSettings>;
+    // DB values take highest priority. Local cache fills in fields the DB doesn't have yet.
+    // We do NOT fall back to fallbackPayrollSettings for statutory fields — admin must encode them.
     const merged: PayrollSettings = {
       ...fallbackPayrollSettings,
       ...currentLocal,
       ...dbRow,
-      // Retain master statutory & signatory fields from local if not returned from DB
-      company_name: dbRow.company_name || currentLocal.company_name || fallbackPayrollSettings.company_name,
-      tin_number: dbRow.tin_number || currentLocal.tin_number || fallbackPayrollSettings.tin_number,
-      sss_employer_id: dbRow.sss_employer_id || currentLocal.sss_employer_id || fallbackPayrollSettings.sss_employer_id,
-      philhealth_employer_id: dbRow.philhealth_employer_id || currentLocal.philhealth_employer_id || fallbackPayrollSettings.philhealth_employer_id,
-      pagibig_employer_id: dbRow.pagibig_employer_id || currentLocal.pagibig_employer_id || fallbackPayrollSettings.pagibig_employer_id,
-      rdo_code: dbRow.rdo_code || currentLocal.rdo_code || fallbackPayrollSettings.rdo_code,
-      signatory_name: dbRow.signatory_name || currentLocal.signatory_name || fallbackPayrollSettings.signatory_name,
-      signatory_title: dbRow.signatory_title || currentLocal.signatory_title || fallbackPayrollSettings.signatory_title,
-      enable_signatory_on_payslips: dbRow.enable_signatory_on_payslips ?? currentLocal.enable_signatory_on_payslips ?? fallbackPayrollSettings.enable_signatory_on_payslips,
-      require_dual_approval: dbRow.require_dual_approval ?? currentLocal.require_dual_approval ?? fallbackPayrollSettings.require_dual_approval,
-      lock_closed_periods: dbRow.lock_closed_periods ?? currentLocal.lock_closed_periods ?? fallbackPayrollSettings.lock_closed_periods,
-      maintenance_mode: dbRow.maintenance_mode ?? currentLocal.maintenance_mode ?? fallbackPayrollSettings.maintenance_mode,
+      // Statutory fields: DB first, then local cache, then empty string (never the mock default)
+      tin_number: dbRow.tin_number !== undefined ? dbRow.tin_number : (currentLocal.tin_number ?? ''),
+      sss_employer_id: dbRow.sss_employer_id !== undefined ? dbRow.sss_employer_id : (currentLocal.sss_employer_id ?? ''),
+      philhealth_employer_id: dbRow.philhealth_employer_id !== undefined ? dbRow.philhealth_employer_id : (currentLocal.philhealth_employer_id ?? ''),
+      pagibig_employer_id: dbRow.pagibig_employer_id !== undefined ? dbRow.pagibig_employer_id : (currentLocal.pagibig_employer_id ?? ''),
+      rdo_code: dbRow.rdo_code !== undefined ? dbRow.rdo_code : (currentLocal.rdo_code ?? ''),
+      signatory_name: dbRow.signatory_name !== undefined ? dbRow.signatory_name : (currentLocal.signatory_name ?? ''),
+      signatory_title: dbRow.signatory_title !== undefined ? dbRow.signatory_title : (currentLocal.signatory_title ?? ''),
+      enable_signatory_on_payslips: dbRow.enable_signatory_on_payslips ?? currentLocal.enable_signatory_on_payslips ?? false,
+      require_dual_approval: dbRow.require_dual_approval ?? currentLocal.require_dual_approval ?? true,
+      lock_closed_periods: dbRow.lock_closed_periods ?? currentLocal.lock_closed_periods ?? true,
+      maintenance_mode: dbRow.maintenance_mode ?? currentLocal.maintenance_mode ?? false,
     };
 
     persistLocalSettings(merged);
