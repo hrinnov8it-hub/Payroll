@@ -8,6 +8,8 @@ import {
   getEmployeePayrollHistory,
   generateReportCSV,
 } from '../actions';
+import { updateLocalRunCache } from '@/lib/payroll/runs-actions';
+import { PayrollRunWithItems } from '@/types/payroll';
 
 export async function runReportsTests(): Promise<{ passed: number; failed: number; results: string[] }> {
   const results: string[] = [];
@@ -23,6 +25,75 @@ export async function runReportsTests(): Promise<{ passed: number; failed: numbe
       results.push(`✗ FAIL: ${testName} - ${detail || 'Assertion failed'}`);
     }
   }
+
+  // Ensure test run fixture is loaded in local cache for isolated tests
+  const testReportRun: PayrollRunWithItems = {
+    id: 'test-run-reports-001',
+    run_number: 'PR-2026-TEST',
+    status: 'locked',
+    payroll_period_id: 'period-test-01',
+    notes: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    payroll_period: {
+      id: 'period-test-01',
+      name: 'Jan 1-15, 2026 Cutoff',
+      start_date: '2026-01-01',
+      end_date: '2026-01-15',
+      payout_date: '2026-01-20',
+      status: 'active',
+    },
+    total_gross_pay: 23528.77,
+    total_deductions: 2475,
+    total_net_pay: 21053.77,
+    total_employees: 1,
+    items: [
+      {
+        id: 'item-reports-001',
+        payroll_run_id: 'test-run-reports-001',
+        employee_id: 'emp-001',
+        employee_number_snapshot: 'EMP-2026-001',
+        employee_name_snapshot: 'Juan Dela Cruz',
+        department_snapshot: 'Tech Department',
+        position_snapshot: 'Sr. Tech',
+        pay_type_snapshot: 'monthly',
+        basic_salary_snapshot: 40000,
+        hourly_rate_snapshot: 229.89,
+        days_worked: 11,
+        regular_hours: 88,
+        overtime_hours: 5,
+        night_diff_hours: 4,
+        holiday_regular_hours: 0,
+        holiday_special_hours: 0,
+        rest_day_hours: 0,
+        late_minutes: 0,
+        undertime_minutes: 0,
+        absent_days: 0,
+        basic_pay: 20000,
+        overtime_pay: 1436.81,
+        night_diff_pay: 91.96,
+        holiday_pay: 0,
+        rest_day_pay: 0,
+        allowances: 2000,
+        bonuses: 0,
+        gross_pay: 23528.77,
+        late_deduction: 0,
+        undertime_deduction: 0,
+        absence_deduction: 0,
+        sss_deduction: 675,
+        philhealth_deduction: 500,
+        pagibig_deduction: 100,
+        tax_deduction: 1200,
+        employer_contributions: 1950,
+        other_deductions: 0,
+        total_deductions: 2475,
+        net_pay: 21053.77,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ],
+  };
+  updateLocalRunCache(testReportRun);
 
   // 1. Executive KPIs
   const kpis = await getExecutiveKPIs();

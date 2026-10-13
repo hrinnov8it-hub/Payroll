@@ -11,7 +11,7 @@
  *    - Tablet/Desktop view (>=768px, >=1024px): Multi-column grid distribution
  */
 
-import { getEmployees } from '../../employees/actions';
+import { getEmployees, updateLocalEmployeesCache } from '../../employees/actions';
 import { generateReportCSV } from '../../reports/actions';
 import { fallbackEmployees } from '../../employees/mock-data';
 import { PayrollRunWithItems } from '../../../types/payroll';
@@ -30,6 +30,26 @@ export async function runUIWorkflowAndResponsiveTests(): Promise<{ passed: numbe
       results.push(`✗ FAIL: ${testName} - ${detail || 'Assertion failed'}`);
     }
   }
+
+  // Ensure test employees exist in local test cache
+  updateLocalEmployeesCache({
+    id: 'emp-001',
+    employee_number: 'EMP-2026-001',
+    first_name: 'Juan',
+    last_name: 'Dela Cruz',
+    email: 'juan@innov8it.com',
+    department_id: 'dept-001',
+    position_id: 'pos-001',
+    employment_type: 'regular',
+    pay_type: 'monthly',
+    basic_salary: 40000,
+    hourly_rate: 229.89,
+    middle_name: null,
+    status: 'active',
+    hire_date: '2026-01-01',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  });
 
   // --------------------------------------------------------------------------
   // 1. Employee Directory Search & Filtering UI Workflow

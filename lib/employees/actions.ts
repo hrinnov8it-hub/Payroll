@@ -59,6 +59,16 @@ function persistEmployeesCache() {
   }
 }
 
+export function updateLocalEmployeesCache(employee: EmployeeWithRelations) {
+  const idx = localEmployeesCache.findIndex((e) => e.id === employee.id);
+  if (idx !== -1) {
+    localEmployeesCache[idx] = employee;
+  } else {
+    localEmployeesCache.unshift(employee);
+  }
+  persistEmployeesCache();
+}
+
 function isValidUUID(str?: string | null): boolean {
   if (!str) return false;
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);

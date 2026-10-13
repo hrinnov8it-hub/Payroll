@@ -21,10 +21,11 @@ import {
 } from '@/components/ui/Table';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingState } from '@/components/ui/LoadingState';
-import { PayrollRun, PayrollRunStatus } from '@/types/payroll';
+import { PayrollRun, PayrollRunWithItems, PayrollRunStatus } from '@/types/payroll';
 import { PayrollPeriod } from '@/types/attendance';
-import { getPayrollRuns, createPayrollRun, deletePayrollRun } from '@/lib/payroll/runs-actions';
+import { getPayrollRuns, getPayrollRunById, createPayrollRun, deletePayrollRun } from '@/lib/payroll/runs-actions';
 import { getPayrollPeriods } from '@/lib/attendance/actions';
+import { PayrollSnapshotModal } from '@/components/payroll/PayrollSnapshotModal';
 
 export default function PayrollRunsPage() {
   const router = useRouter();
@@ -39,6 +40,8 @@ export default function PayrollRunsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [runToDelete, setRunToDelete] = useState<PayrollRun | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [snapshotModalRun, setSnapshotModalRun] = useState<PayrollRunWithItems | null>(null);
+  const [isSnapshotLoading, setIsSnapshotLoading] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -70,6 +73,22 @@ export default function PayrollRunsPage() {
       }
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleOpenSnapshot = async (run: PayrollRun) => {
+    setIsSnapshotLoading(run.id);
+    try {
+      const fullRun = await getPayrollRunById(run.id);
+      if (fullRun && fullRun.items && fullRun.items.length > 0) {
+        setSnapshotModalRun(fullRun);
+      } else {
+        router.push(`/payroll-runs/${run.id}`);
+      }
+    } catch {
+      router.push(`/payroll-runs/${run.id}`);
+    } finally {
+      setIsSnapshotLoading(null);
     }
   };
 
@@ -346,9 +365,18 @@ export default function PayrollRunsPage() {
 
                       <TableCell align="right">
                         <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenSnapshot(run)}
+                            isLoading={isSnapshotLoading === run.id}
+                            title="View granular snapshot breakdown"
+                          >
+                            👁️ View Snapshot
+                          </Button>
                           <Link href={`/payroll-runs/${run.id}`}>
-                            <Button variant="outline" size="sm">
-                              View Snapshots
+                            <Button variant="outline" size="sm" title="View run details and approval chain">
+                              Details
                             </Button>
                           </Link>
                           <Button
@@ -470,6 +498,16 @@ export default function PayrollRunsPage() {
             </div>
           )}
         </Modal>
+
+        {/* Modal: Payroll Snapshot Breakdown */}
+        {snapshotModalRun && (
+          <PayrollSnapshotModal
+            isOpen={!!snapshotModalRun}
+            onClose={() => setSnapshotModalRun(null)}
+            items={snapshotModalRun.items || []}
+            runId={snapshotModalRun.id}
+          />
+        )}
       </div>
     </AppShell>
   );
