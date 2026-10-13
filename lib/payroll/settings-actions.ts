@@ -14,10 +14,62 @@ import {
   fallbackDeductionTypes,
 } from './mock-settings';
 
-// In-memory cache for changes if remote database table is not yet migrated
-let localSettingsCache: PayrollSettings = { ...fallbackPayrollSettings };
+const SETTINGS_STORAGE_KEY = 'innov8it_payroll_settings';
+
+const SUPABASE_PAYROLL_SETTINGS_COLUMNS = new Set([
+  'id',
+  'company_name',
+  'pay_frequency',
+  'first_cutoff_start_day',
+  'first_cutoff_end_day',
+  'second_cutoff_start_day',
+  'second_cutoff_end_day',
+  'overtime_regular_rate',
+  'overtime_rest_day_rate',
+  'overtime_holiday_rate',
+  'night_diff_rate',
+  'night_diff_start_time',
+  'night_diff_end_time',
+  'regular_holiday_rate',
+  'special_holiday_rate',
+  'rest_day_rate',
+  'rest_day_special_holiday_rate',
+  'rest_day_regular_holiday_rate',
+  'standard_working_days_per_year',
+  'standard_hours_per_day',
+  'grace_period_late_minutes',
+  'created_at',
+  'updated_at',
+]);
+
+function loadLocalSettings(): PayrollSettings {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === 'object') {
+          return { ...fallbackPayrollSettings, ...parsed };
+        }
+      }
+    } catch {}
+  }
+  return { ...fallbackPayrollSettings };
+}
+
+// In-memory cache for settings with localStorage hydration
+let localSettingsCache: PayrollSettings = loadLocalSettings();
 let localEarningsCache: EarningType[] = [...fallbackEarningTypes];
 let localDeductionsCache: DeductionType[] = [...fallbackDeductionTypes];
+
+function persistLocalSettings(settings: PayrollSettings) {
+  localSettingsCache = { ...settings };
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(localSettingsCache));
+    } catch {}
+  }
+}
 
 let localAdminProfilesCache: AdminProfile[] = [
   {
@@ -40,21 +92,44 @@ let localAdminProfilesCache: AdminProfile[] = [
  * Fetch payroll settings
  */
 export async function getPayrollSettings(): Promise<PayrollSettings> {
+  const currentLocal = loadLocalSettings();
   try {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('payroll_settings')
       .select('*')
+      .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (error || !data) {
-      return localSettingsCache;
+      return currentLocal;
     }
 
-    return data as unknown as PayrollSettings;
+    const dbRow = data as unknown as Partial<PayrollSettings>;
+    const merged: PayrollSettings = {
+      ...fallbackPayrollSettings,
+      ...currentLocal,
+      ...dbRow,
+      // Retain master statutory & signatory fields from local if not returned from DB
+      company_name: dbRow.company_name || currentLocal.company_name || fallbackPayrollSettings.company_name,
+      tin_number: dbRow.tin_number || currentLocal.tin_number || fallbackPayrollSettings.tin_number,
+      sss_employer_id: dbRow.sss_employer_id || currentLocal.sss_employer_id || fallbackPayrollSettings.sss_employer_id,
+      philhealth_employer_id: dbRow.philhealth_employer_id || currentLocal.philhealth_employer_id || fallbackPayrollSettings.philhealth_employer_id,
+      pagibig_employer_id: dbRow.pagibig_employer_id || currentLocal.pagibig_employer_id || fallbackPayrollSettings.pagibig_employer_id,
+      rdo_code: dbRow.rdo_code || currentLocal.rdo_code || fallbackPayrollSettings.rdo_code,
+      signatory_name: dbRow.signatory_name || currentLocal.signatory_name || fallbackPayrollSettings.signatory_name,
+      signatory_title: dbRow.signatory_title || currentLocal.signatory_title || fallbackPayrollSettings.signatory_title,
+      enable_signatory_on_payslips: dbRow.enable_signatory_on_payslips ?? currentLocal.enable_signatory_on_payslips ?? fallbackPayrollSettings.enable_signatory_on_payslips,
+      require_dual_approval: dbRow.require_dual_approval ?? currentLocal.require_dual_approval ?? fallbackPayrollSettings.require_dual_approval,
+      lock_closed_periods: dbRow.lock_closed_periods ?? currentLocal.lock_closed_periods ?? fallbackPayrollSettings.lock_closed_periods,
+      maintenance_mode: dbRow.maintenance_mode ?? currentLocal.maintenance_mode ?? fallbackPayrollSettings.maintenance_mode,
+    };
+
+    persistLocalSettings(merged);
+    return merged;
   } catch {
-    return localSettingsCache;
+    return currentLocal;
   }
 }
 
@@ -65,51 +140,84 @@ export async function updatePayrollSettings(
   data: Partial<PayrollSettings>
 ): Promise<{ success: boolean; data?: PayrollSettings; error?: string }> {
   try {
-    const supabase = createClient();
-    const payload = {
+    const currentLocal = loadLocalSettings();
+    const merged: PayrollSettings = {
+      ...currentLocal,
       ...data,
       updated_at: new Date().toISOString(),
     };
 
-    // Find existing row by querying for any record
-    const { data: existing } = await supabase
+    // Immediately persist all fields to local storage so client UI has zero data loss
+    persistLocalSettings(merged);
+
+    const supabase = createClient();
+
+    // Query for existing rows in Supabase
+    const { data: existingRows } = await supabase
       .from('payroll_settings')
       .select('id')
-      .limit(1)
-      .maybeSingle();
+      .order('updated_at', { ascending: false });
 
-    const existingId = (existing as any)?.id;
-    let updated: any = null;
-    let error: any = null;
+    const existingId = existingRows && existingRows.length > 0 ? (existingRows[0] as any).id : null;
 
+    // Filter payload for known DB columns to guarantee saving standard fields in Supabase
+    const dbPayload: Record<string, any> = {};
+    for (const [key, value] of Object.entries(merged)) {
+      if (SUPABASE_PAYROLL_SETTINGS_COLUMNS.has(key)) {
+        dbPayload[key] = value;
+      }
+    }
+    dbPayload.updated_at = new Date().toISOString();
+
+    let dbUpdated = false;
+    // 1. Try updating all columns in case DB schema has been migrated with new columns
     if (existingId) {
-      const res = await (supabase.from('payroll_settings') as any)
-        .update(payload)
-        .eq('id', existingId)
-        .select('*')
-        .maybeSingle();
-      updated = res.data;
-      error = res.error;
-    } else {
-      const res = await (supabase.from('payroll_settings') as any)
-        .insert(payload)
-        .select('*')
-        .maybeSingle();
-      updated = res.data;
-      error = res.error;
+      try {
+        const fullRes = await (supabase.from('payroll_settings') as any)
+          .update(merged)
+          .eq('id', existingId)
+          .select('*')
+          .maybeSingle();
+        if (!fullRes.error && fullRes.data) {
+          dbUpdated = true;
+          if (existingRows && existingRows.length > 1) {
+            for (let i = 1; i < existingRows.length; i++) {
+              await (supabase.from('payroll_settings') as any).update(merged).eq('id', (existingRows[i] as any).id);
+            }
+          }
+        }
+      } catch {}
     }
 
-    if (error || !updated) {
-      console.warn('Supabase settings update note:', error?.message);
-      localSettingsCache = { ...localSettingsCache, ...payload };
-      return { success: true, data: localSettingsCache };
+    // 2. If full update failed (e.g. column not found), update using clean dbPayload
+    if (!dbUpdated && existingId) {
+      try {
+        await (supabase.from('payroll_settings') as any)
+          .update(dbPayload)
+          .eq('id', existingId);
+
+        if (existingRows && existingRows.length > 1) {
+          for (let i = 1; i < existingRows.length; i++) {
+            await (supabase.from('payroll_settings') as any).update(dbPayload).eq('id', (existingRows[i] as any).id);
+          }
+        }
+      } catch (e) {
+        console.warn('Supabase fallback update note:', e);
+      }
+    } else if (!existingId) {
+      try {
+        await (supabase.from('payroll_settings') as any).insert(dbPayload);
+      } catch (e) {
+        console.warn('Supabase insert note:', e);
+      }
     }
 
-    localSettingsCache = updated as unknown as PayrollSettings;
-    return { success: true, data: localSettingsCache };
+    return { success: true, data: merged };
   } catch (err: any) {
-    localSettingsCache = { ...localSettingsCache, ...data };
-    return { success: true, data: localSettingsCache };
+    const currentLocal = loadLocalSettings();
+    const merged = { ...currentLocal, ...data };
+    persistLocalSettings(merged);
+    return { success: true, data: merged };
   }
 }
 

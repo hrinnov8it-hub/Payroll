@@ -66,6 +66,31 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
     fetchProfiles();
   }, []);
 
+  // Sync when initialSettings updates
+  useEffect(() => {
+    if (initialSettings) {
+      setSettings((prev) => ({
+        ...prev,
+        ...initialSettings,
+      }));
+    }
+  }, [initialSettings]);
+
+  // Hydrate from localStorage on client mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = window.localStorage.getItem('innov8it_payroll_settings');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === 'object') {
+            setSettings((prev) => ({ ...prev, ...parsed }));
+          }
+        }
+      } catch {}
+    }
+  }, []);
+
   // Handle saving Employer Tax & Master Details
   const handleSaveTax = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,9 +99,15 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
     setTaxSaveError(null);
 
     try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('innov8it_payroll_settings', JSON.stringify(settings));
+      }
       const res = await updatePayrollSettings(settings);
       if (res.success && res.data) {
         setSettings(res.data);
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem('innov8it_payroll_settings', JSON.stringify(res.data));
+        }
         setTaxSaveSuccess(true);
         if (onSaved) onSaved(res.data);
         setTimeout(() => setTaxSaveSuccess(false), 4000);
@@ -98,9 +129,15 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
     setPolicySaveError(null);
 
     try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('innov8it_payroll_settings', JSON.stringify(settings));
+      }
       const res = await updatePayrollSettings(settings);
       if (res.success && res.data) {
         setSettings(res.data);
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem('innov8it_payroll_settings', JSON.stringify(res.data));
+        }
         setPolicySaveSuccess(true);
         if (onSaved) onSaved(res.data);
         setTimeout(() => setPolicySaveSuccess(false), 4000);
@@ -283,7 +320,7 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
             <div className="form-grid-2">
               <Input
                 label="Corporate Registered Name"
-                value={settings.company_name}
+                value={settings.company_name || ''}
                 onChange={(e) => setSettings({ ...settings, company_name: e.target.value })}
                 placeholder="Innov8IT Corporation"
                 required
