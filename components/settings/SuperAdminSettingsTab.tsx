@@ -280,7 +280,7 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
             <Badge variant="success" dot>DOLE & BIR Standard</Badge>
           </div>
           <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-            <strong>HR Admin is the designated operational administrator of this payroll.</strong> Super Admins govern root-level statutory agency credentials (BIR, SSS, PhilHealth, Pag-IBIG), administrative role delegation, and cloud infrastructure synchronization.
+            <strong>HR is the Super Admin of this payroll.</strong> HR manages payroll approvals, statutory agency credentials (BIR, SSS, PhilHealth, Pag-IBIG), administrative roles, and cloud infrastructure synchronization.
           </p>
         </div>
       </div>
@@ -377,6 +377,7 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
                   value={settings.signatory_name || ''}
                   onChange={(e) => setSettings({ ...settings, signatory_name: e.target.value })}
                   placeholder="Maria R. Santos"
+                  helperText="Used as the Approved By name and in approval audit entries for HR / Super Admin."
                 />
 
                 <Input
@@ -648,7 +649,7 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
                     Require Super Admin Dual-Approval Before Bank Disbursement
                   </label>
                   <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                    When enabled, after HR Admin completes and reviews the payroll calculation, a Super Admin must endorse final approval before release status transitions to &ldquo;Paid&rdquo;.
+                    HR acts as Super Admin and provides final approval after reviewing the payroll calculation, before release status transitions to &ldquo;Paid&rdquo;.
                   </p>
                 </div>
               </div>
@@ -834,7 +835,7 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
                 color: 'var(--text-muted)',
               }}
             >
-              <strong>Role Scope Note:</strong> HR Admin has day-to-day authority over employee onboarding, DTR cutoff verification, and running payroll calculations. Super Admins hold root controls over statutory IDs, user roles, and database integrity.
+              <strong>Role Scope Note:</strong> HR is the Super Admin, with authority over employee onboarding, DTR cutoff verification, payroll calculations and approvals, statutory IDs, user roles, and database integrity.
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>

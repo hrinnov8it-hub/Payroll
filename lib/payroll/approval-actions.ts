@@ -23,6 +23,8 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { syncPayslipsFromRun } from '@/lib/payslips/actions';
 import { updateLocalRunCache } from '@/lib/payroll/runs-actions';
+import { getPayrollSettings } from '@/lib/payroll/settings-actions';
+import { getPayrollApprovalName } from '@/lib/payroll/signatory';
 
 // ==============================================================================
 // In-memory & LocalStorage audit event store
@@ -249,13 +251,15 @@ export async function approvePayrollRun(
     };
   }
 
+  const settings = await getPayrollSettings();
+  const approverName = getPayrollApprovalName(performedByName, settings.signatory_name);
   const approvedAt = new Date().toISOString();
 
   const updatedRun: PayrollRunWithItems = {
     ...run,
     status: 'approved',
     approved_by: performedBy,
-    approved_by_name: performedByName,
+    approved_by_name: approverName,
     approved_at: approvedAt,
     updated_at: approvedAt,
   };
@@ -264,7 +268,7 @@ export async function approvePayrollRun(
     payroll_run_id: run.id,
     action: 'approved',
     performed_by: performedBy,
-    performed_by_name: performedByName,
+    performed_by_name: approverName,
     from_status: 'review',
     to_status: 'approved',
     notes: approvalNotes || null,
@@ -275,7 +279,7 @@ export async function approvePayrollRun(
   await persistRunToSupabase(run.id, {
     status: 'approved',
     approved_by: performedBy,
-    approved_by_name: performedByName,
+    approved_by_name: approverName,
     approved_at: approvedAt,
     updated_at: approvedAt,
   });

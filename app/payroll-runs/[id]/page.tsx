@@ -34,6 +34,8 @@ import {
   deletePayrollRun,
 } from '@/lib/payroll/runs-actions';
 import { syncPayslipsFromRun } from '@/lib/payslips/actions';
+import { getPayrollSettings } from '@/lib/payroll/settings-actions';
+import { getPayrollApprovalName, resolvePayrollActorName } from '@/lib/payroll/signatory';
 import { PayrollSnapshotModal } from '@/components/payroll/PayrollSnapshotModal';
 import {
   submitForReview,
@@ -60,13 +62,6 @@ const WORKFLOW_STEPS: PayrollRunStatus[] = [
   'paid',
   'locked',
 ];
-
-// Simulated current user — in Phase 13, this will come from Supabase auth session
-const MOCK_USERS: Record<UserRole, { id: string; name: string; role: UserRole }> = {
-  admin: { id: 'user-admin-001', name: 'Admin (System)', role: 'admin' },
-  payroll_hr: { id: 'user-hr-001', name: 'Maria Santos (HR Admin)', role: 'payroll_hr' },
-  employee: { id: 'user-emp-001', name: 'Juan Dela Cruz', role: 'employee' },
-};
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString('en-PH', {
@@ -124,8 +119,9 @@ export default function PayrollRunDetailPage() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Phase 9: Review & Approval state
-  const [activeRole, setActiveRole] = useState<UserRole>('payroll_hr');
-  const [userName, setUserName] = useState<string>('Maria Santos (HR Admin)');
+  const [activeRole, setActiveRole] = useState<UserRole>('employee');
+  const [userName, setUserName] = useState<string>('HR Admin');
+  const [userId, setUserId] = useState<string>('');
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [editingNameValue, setEditingNameValue] = useState<string>('');
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
@@ -151,36 +147,25 @@ export default function PayrollRunDetailPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedName = localStorage.getItem('innov8it_user_name');
-      if (storedName) {
-        setUserName(storedName);
-        return;
-      }
+      if (storedName) setUserName(storedName);
       try {
         const storedUser = localStorage.getItem('innov8it_current_user');
         if (storedUser) {
           const parsed = JSON.parse(storedUser);
-          if (parsed?.name) {
-            setUserName(parsed.name);
-          }
+          if (!storedName && parsed?.name) setUserName(parsed.name);
+          if (parsed?.id) setUserId(parsed.id);
+          if (parsed?.role === 'super_admin' || parsed?.role === 'admin') setActiveRole('admin');
+          else if (parsed?.role === 'payroll_hr' || parsed?.role === 'employee') setActiveRole(parsed.role);
         }
       } catch {}
     }
   }, []);
 
-  // Load signatory from settings
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('innov8it_payroll_settings');
-      if (stored) {
-        const s = JSON.parse(stored);
-        setSignatoryName(s.signatory_name || '');
-        setSignatoryTitle(s.signatory_title || '');
-        setShowSignatory(s.enable_signatory_on_payslips ?? false);
-      }
-    } catch {}
-  }, []);
-
-  const currentUser = { ...MOCK_USERS[activeRole], name: userName };
+  const currentUser = {
+    id: userId,
+    name: activeRole === 'employee' ? userName : getPayrollApprovalName(userName, signatoryName),
+    role: activeRole,
+  };
   const permissions = getRolePermissions(activeRole);
 
   const refreshAuditData = useCallback((id: string) => {
@@ -192,7 +177,10 @@ export default function PayrollRunDetailPage() {
     if (!runId) return;
     try {
       setLoading(true);
-      const data = await getPayrollRunById(runId);
+      const [data, settings] = await Promise.all([getPayrollRunById(runId), getPayrollSettings()]);
+      setSignatoryName(settings.signatory_name?.trim() || '');
+      setSignatoryTitle(settings.signatory_title || '');
+      setShowSignatory(settings.enable_signatory_on_payslips ?? false);
       setRun(data);
       if (data) {
         refreshAuditData(data.id);
@@ -458,7 +446,7 @@ export default function PayrollRunDetailPage() {
                 {run.status.toUpperCase()}
               </Badge>
               <span className={`role-badge role-${activeRole}`}>
-                {activeRole === 'admin' ? '🛡️ Admin' : activeRole === 'payroll_hr' ? '🛡️ HR Admin' : '👤 Employee'}
+                {activeRole === 'admin' ? '🛡️ HR / Super Admin' : activeRole === 'payroll_hr' ? '🛡️ HR Admin' : '👤 Employee'}
               </span>
             </div>
             <div style={{ marginTop: '0.4rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
@@ -472,7 +460,7 @@ export default function PayrollRunDetailPage() {
             )}
             {run.approved_by_name && (
               <div style={{ marginTop: '0.35rem', fontSize: '0.82rem', color: '#15803d', fontWeight: 600 }}>
-                ✅ Approved by {run.approved_by_name} on {run.approved_at ? formatDateTime(run.approved_at) : '—'}
+                ✅ Approved by {resolvePayrollActorName(run.approved_by_name, signatoryName)} on {run.approved_at ? formatDateTime(run.approved_at) : '—'}
               </div>
             )}
             {run.locked_by_name && (
@@ -595,7 +583,7 @@ export default function PayrollRunDetailPage() {
               <div className="approval-summary-bar">
                 <div className="approval-summary-item">
                   <span className="approval-summary-label">Approved By</span>
-                  <span className="approval-summary-value">{run.approved_by_name}</span>
+                  <span className="approval-summary-value">{resolvePayrollActorName(run.approved_by_name, signatoryName)}</span>
                 </div>
                 <div className="approval-summary-item">
                   <span className="approval-summary-label">Approved At</span>
@@ -778,7 +766,7 @@ export default function PayrollRunDetailPage() {
                   className={`audit-log-entry ${getAuditEntryClass(event.action)}`}
                 >
                   <div className="audit-log-action">{getAuditActionLabel(event.action)}</div>
-                  <div className="audit-log-by">By: <strong>{event.performed_by_name}</strong></div>
+                  <div className="audit-log-by">By: <strong>{resolvePayrollActorName(event.performed_by_name, signatoryName)}</strong></div>
                   {event.from_status && event.to_status && (
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                       {event.from_status.toUpperCase()} → {event.to_status.toUpperCase()}
