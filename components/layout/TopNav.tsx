@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { createClient } from '@/lib/supabase/client';
+import { getAccountRole, getAccountRoleLabel, resolveAccountRole } from '@/lib/auth/account-role';
 
 interface TopNavProps {
   onToggleSidebar: () => void;
@@ -17,7 +18,7 @@ export const TopNav: React.FC<TopNavProps> = ({
 }) => {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string>('HR Admin');
+  const [userRole, setUserRole] = useState<string>('Super Admin');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
@@ -29,11 +30,9 @@ export const TopNav: React.FC<TopNavProps> = ({
           const parsed = JSON.parse(stored);
           if (parsed?.email) {
             setUserEmail(parsed.email);
-            if (parsed.role === 'super_admin' || parsed.email.toLowerCase().includes('superadmin')) {
-              setUserRole('Super Admin');
-            } else {
-              setUserRole('HR Admin');
-            }
+            const role = resolveAccountRole(parsed.email, parsed.role);
+            setUserRole(getAccountRoleLabel(role));
+            localStorage.setItem('innov8it_current_user', JSON.stringify({ ...parsed, role }));
           }
         }
       } catch {}
@@ -44,11 +43,7 @@ export const TopNav: React.FC<TopNavProps> = ({
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user?.email) {
         setUserEmail(user.email);
-        if (user.email.toLowerCase().includes('superadmin')) {
-          setUserRole('Super Admin');
-        } else {
-          setUserRole('HR Admin');
-        }
+        getAccountRole(user.id, user.email).then((role) => setUserRole(getAccountRoleLabel(role))).catch(() => {});
       } else {
         setUserEmail((prev) => prev || 'hr.innov8it@gmail.com');
       }
@@ -59,11 +54,7 @@ export const TopNav: React.FC<TopNavProps> = ({
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user?.email) {
         setUserEmail(session.user.email);
-        if (session.user.email.toLowerCase().includes('superadmin')) {
-          setUserRole('Super Admin');
-        } else {
-          setUserRole('HR Admin');
-        }
+        getAccountRole(session.user.id, session.user.email).then((role) => setUserRole(getAccountRoleLabel(role))).catch(() => {});
       }
     });
 

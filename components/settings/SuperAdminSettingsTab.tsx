@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { PayrollSettings, AdminProfile } from '@/types/payroll';
 import { UserRole } from '@/types/auth';
+import { isHRSuperAdmin } from '@/lib/auth/account-role';
 import {
   updatePayrollSettings,
   getAdminProfiles,
@@ -417,7 +418,7 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div>
               <CardTitle>Administrator & HR Role Delegation</CardTitle>
-              <CardSubtitle>Assign administrative privileges. The HR role serves as the primary payroll operator.</CardSubtitle>
+              <CardSubtitle>HR is the Super Admin with full payroll and system access. Delegate additional roles below.</CardSubtitle>
             </div>
             <Button
               variant="outline"
@@ -460,6 +461,7 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
                   adminProfiles.map((admin) => {
                     const isSuper = admin.role === 'super_admin';
                     const isHr = admin.role === 'admin' || admin.role === 'payroll_hr';
+                    const isDesignatedHR = isHRSuperAdmin(admin.email);
 
                     return (
                       <tr key={admin.id}>
@@ -550,7 +552,7 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
                         </td>
                         <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
                           {isSuper
-                            ? 'Root access: Statutory IDs, Cloud DB sync, user role delegation, policy locks.'
+                            ? 'Full access: Payroll, employees, payslips, statutory IDs, cloud sync, user roles, and policy locks.'
                             : isHr
                             ? 'Primary Payroll Admin: Employee management, calculates runs, generates payslips.'
                             : 'Review only: Time & attendance verification and run preview.'}
@@ -559,6 +561,8 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
                           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                             <select
                               value={admin.role}
+                              disabled={isDesignatedHR}
+                              title={isDesignatedHR ? 'HR is the designated Super Admin' : undefined}
                               onChange={(e) => handleRoleChange(admin.id, e.target.value as UserRole)}
                               style={{
                                 fontSize: '0.78rem',
@@ -575,7 +579,7 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
                               <option value="employee">Employee</option>
                             </select>
 
-                            {admin.email !== 'hr.innov8it@gmail.com' && (
+                            {!isDesignatedHR && (
                               <button
                                 type="button"
                                 onClick={() => handleDeleteAdmin(admin.id, admin.email)}

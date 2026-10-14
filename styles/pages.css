@@ -720,6 +720,7 @@
   border-radius: var(--radius-sm);
 }
 
+.role-badge.role-super_admin,
 .role-badge.role-admin {
   background: #fef3c7;
   color: #92400e;

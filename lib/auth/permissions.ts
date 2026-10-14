@@ -1,4 +1,5 @@
-export type UserRole = 'admin' | 'payroll_hr' | 'employee';
+import type { UserRole } from '@/types/auth';
+export type { UserRole } from '@/types/auth';
 
 export interface UserContext {
   id: string;
@@ -35,7 +36,7 @@ export function assertAdminOrHR(user?: UserContext | null): PermissionCheckResul
   const authCheck = assertUserAuthenticated(user);
   if (!authCheck.allowed) return authCheck;
 
-  if (user?.role !== 'admin' && user?.role !== 'payroll_hr') {
+  if (user?.role !== 'super_admin' && user?.role !== 'admin' && user?.role !== 'payroll_hr') {
     return {
       allowed: false,
       statusCode: 403,
@@ -55,7 +56,7 @@ export function assertEmployeeSelfOrAdmin(
   const authCheck = assertUserAuthenticated(user);
   if (!authCheck.allowed) return authCheck;
 
-  if (user?.role === 'admin' || user?.role === 'payroll_hr') {
+  if (user?.role === 'super_admin' || user?.role === 'admin' || user?.role === 'payroll_hr') {
     return { allowed: true, statusCode: 200 };
   }
 

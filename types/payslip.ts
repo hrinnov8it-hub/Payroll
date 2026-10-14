@@ -96,6 +96,6 @@ export interface PayslipAccessUser {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'payroll_hr' | 'employee';
+  role: import('./auth').UserRole;
   employeeId?: string;
 }

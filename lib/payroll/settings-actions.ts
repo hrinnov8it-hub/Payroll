@@ -8,6 +8,7 @@ import {
   AdminProfile,
 } from '@/types/payroll';
 import { UserRole } from '@/types/auth';
+import { isHRSuperAdmin, resolveAccountRole, RETIRED_OWNER_EMAIL } from '@/lib/auth/account-role';
 import {
   fallbackPayrollSettings,
   fallbackEarningTypes,
@@ -116,17 +117,10 @@ function persistLocalSettings(settings: PayrollSettings) {
 
 let localAdminProfilesCache: AdminProfile[] = [
   {
-    id: 'profile-super-admin-01',
-    email: 'superadmin.innov8it@gmail.com',
-    full_name: 'Innov8IT System Owner',
-    role: 'super_admin',
-    created_at: '2026-01-01T08:00:00Z',
-  },
-  {
     id: 'profile-hr-admin-01',
     email: 'hr.innov8it@gmail.com',
     full_name: 'HR Administrator',
-    role: 'admin',
+    role: 'super_admin',
     created_at: '2026-01-01T08:00:00Z',
   },
 ];
@@ -501,8 +495,10 @@ export async function getAdminProfiles(): Promise<AdminProfile[]> {
       return localAdminProfilesCache;
     }
 
-    const merged = [...data] as AdminProfile[];
-    // Ensure our default HR & Super admin are preserved if not yet in DB
+    const merged = (data as AdminProfile[])
+      .filter((profile) => profile.email.trim().toLowerCase() !== RETIRED_OWNER_EMAIL)
+      .map((profile) => ({ ...profile, role: resolveAccountRole(profile.email, profile.role) }));
+    // Preserve the designated HR Super Admin if its DB profile is not available yet.
     localAdminProfilesCache.forEach((fallbackUser) => {
       if (!merged.some((u) => u.email.toLowerCase() === fallbackUser.email.toLowerCase())) {
         merged.push(fallbackUser);
@@ -570,6 +566,10 @@ export async function updateAdminProfileRole(
   id: string,
   role: UserRole
 ): Promise<{ success: boolean; error?: string }> {
+  const profile = localAdminProfilesCache.find((p) => p.id === id);
+  if (isHRSuperAdmin(profile?.email) && role !== 'super_admin') {
+    return { success: false, error: 'HR is the designated Super Admin and cannot be demoted.' };
+  }
   try {
     const supabase = createClient();
     await (supabase.from('profiles') as any)

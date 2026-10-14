@@ -64,7 +64,7 @@ function isValidUUID(str?: string | null): boolean {
 // Role permission definitions
 // ==============================================================================
 
-export type UserRole = 'admin' | 'payroll_hr' | 'employee';
+export type UserRole = import('@/types/auth').UserRole;
 
 const ROLE_PERMISSIONS: Record<UserRole, {
   canApprove: boolean;
@@ -72,6 +72,7 @@ const ROLE_PERMISSIONS: Record<UserRole, {
   canUnlock: boolean;
   canReturnToDraft: boolean;
 }> = {
+  super_admin: { canApprove: true, canLock: true, canUnlock: true, canReturnToDraft: true },
   admin: { canApprove: true, canLock: true, canUnlock: true, canReturnToDraft: true },
   payroll_hr: { canApprove: true, canLock: true, canUnlock: true, canReturnToDraft: true },
   employee: { canApprove: false, canLock: false, canUnlock: false, canReturnToDraft: false },

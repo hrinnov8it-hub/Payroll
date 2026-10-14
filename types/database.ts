@@ -625,7 +625,7 @@ export interface Database {
       };
     };
     Enums: {
-      user_role: 'admin' | 'payroll_hr' | 'employee';
+      user_role: 'super_admin' | 'admin' | 'payroll_hr' | 'employee';
       employment_type: 'regular' | 'probationary' | 'contractual' | 'part_time';
       pay_type: 'monthly' | 'daily' | 'hourly';
       employee_status: 'active' | 'inactive' | 'terminated';

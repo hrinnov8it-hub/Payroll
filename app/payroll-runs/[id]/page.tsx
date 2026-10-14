@@ -36,6 +36,7 @@ import {
 import { syncPayslipsFromRun } from '@/lib/payslips/actions';
 import { getPayrollSettings } from '@/lib/payroll/settings-actions';
 import { getPayrollApprovalName, resolvePayrollActorName } from '@/lib/payroll/signatory';
+import { resolveAccountRole } from '@/lib/auth/account-role';
 import { PayrollSnapshotModal } from '@/components/payroll/PayrollSnapshotModal';
 import {
   submitForReview,
@@ -154,8 +155,7 @@ export default function PayrollRunDetailPage() {
           const parsed = JSON.parse(storedUser);
           if (!storedName && parsed?.name) setUserName(parsed.name);
           if (parsed?.id) setUserId(parsed.id);
-          if (parsed?.role === 'super_admin' || parsed?.role === 'admin') setActiveRole('admin');
-          else if (parsed?.role === 'payroll_hr' || parsed?.role === 'employee') setActiveRole(parsed.role);
+          setActiveRole(resolveAccountRole(parsed?.email, parsed?.role));
         }
       } catch {}
     }
@@ -446,7 +446,7 @@ export default function PayrollRunDetailPage() {
                 {run.status.toUpperCase()}
               </Badge>
               <span className={`role-badge role-${activeRole}`}>
-                {activeRole === 'admin' ? '🛡️ HR / Super Admin' : activeRole === 'payroll_hr' ? '🛡️ HR Admin' : '👤 Employee'}
+                {activeRole === 'super_admin' ? '🛡️ HR / Super Admin' : activeRole === 'admin' ? '🛡️ Admin' : activeRole === 'payroll_hr' ? '🛡️ HR Admin' : '👤 Employee'}
               </span>
             </div>
             <div style={{ marginTop: '0.4rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
@@ -707,7 +707,7 @@ export default function PayrollRunDetailPage() {
             )}
 
             {/* Admin Unlock Danger Zone */}
-            {isLocked && activeRole === 'admin' && (
+            {isLocked && (activeRole === 'super_admin' || activeRole === 'admin') && (
               <div className="danger-zone-panel">
                 <div className="danger-zone-title">
                   ⚠️ Admin Danger Zone — Unlock Payroll Run

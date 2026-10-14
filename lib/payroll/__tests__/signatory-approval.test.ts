@@ -42,6 +42,11 @@ test('approval saves the configured signatory while retaining actor ID and permi
     assert.equal(updates[0]?.approved_at, result.data?.approved_at);
     assert.equal(getAuditEventsForRun(run.id)[0]?.performed_by_name, 'Alex Reyes');
 
+    const superAdmin = await approvePayrollRun({ ...run, id: 'signatory-super-admin-test' }, actorId, 'HR Administrator', 'super_admin');
+    assert.equal(superAdmin.success, true);
+    assert.equal(superAdmin.data?.approved_by_name, 'Alex Reyes');
+    assert.equal(superAdmin.auditEvent?.performed_by, actorId);
+
     signatoryName = 'Jamie Cruz';
     const hrResult = await approvePayrollRun({ ...run, id: 'signatory-hr-test' }, actorId, 'HR Admin', 'payroll_hr');
     assert.equal(hrResult.data?.approved_by_name, 'Jamie Cruz');

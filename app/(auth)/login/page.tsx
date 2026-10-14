@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/Input';
 import { Logo } from '@/components/ui/Logo';
 import { AlertBanner } from '@/components/ui/ErrorState';
 import { createClient } from '@/lib/supabase/client';
+import { getAccountRole } from '@/lib/auth/account-role';
+import type { User } from '@supabase/supabase-js';
 
 function LoginForm() {
   const router = useRouter();
@@ -19,17 +21,18 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const setAdminSession = (userEmail?: string) => {
+  const setAdminSession = async (user: User) => {
+    const role = await getAccountRole(user.id, user.email);
     if (typeof document !== 'undefined') {
       document.cookie = 'innov8it_auth_user=admin; path=/; max-age=604800; SameSite=Lax';
       try {
         localStorage.setItem(
           'innov8it_current_user',
           JSON.stringify({
-            id: 'user-admin-001',
-            name: 'HR Admin',
-            email: userEmail || 'hr.innov8it@gmail.com',
-            role: 'admin',
+            id: user.id,
+            name: user.user_metadata?.full_name || (role === 'super_admin' ? 'HR Administrator' : user.email),
+            email: user.email,
+            role,
           })
         );
       } catch {}
@@ -59,7 +62,7 @@ function LoginForm() {
       }
 
       if (data.session) {
-        setAdminSession(cleanEmail);
+        await setAdminSession(data.session.user);
         router.push(returnUrl);
         router.refresh();
       } else {

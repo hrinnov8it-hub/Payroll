@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/ui/Logo';
 import { createClient } from '@/lib/supabase/client';
+import { getAccountRole, getAccountRoleLabel, resolveAccountRole } from '@/lib/auth/account-role';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -15,7 +16,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
   const [userEmail, setUserEmail] = useState<string>('hr.innov8it@gmail.com');
   const [userInitials, setUserInitials] = useState<string>('HR');
-  const [userRole, setUserRole] = useState<string>('HR Admin');
+  const [userRole, setUserRole] = useState<string>('Super Admin');
 
   useEffect(() => {
     // 1. Check local session
@@ -28,11 +29,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             setUserEmail(parsed.email);
             const namePart = parsed.email.split('@')[0];
             setUserInitials(namePart.slice(0, 2).toUpperCase());
-            if (parsed.role === 'super_admin' || parsed.email.toLowerCase().includes('superadmin')) {
-              setUserRole('Super Admin');
-            } else {
-              setUserRole('HR Admin');
-            }
+            setUserRole(getAccountRoleLabel(resolveAccountRole(parsed.email, parsed.role)));
           }
         }
       } catch {}
@@ -45,11 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         setUserEmail(user.email);
         const namePart = user.email.split('@')[0];
         setUserInitials(namePart.slice(0, 2).toUpperCase());
-        if (user.email.toLowerCase().includes('superadmin')) {
-          setUserRole('Super Admin');
-        } else {
-          setUserRole('HR Admin');
-        }
+        getAccountRole(user.id, user.email).then((role) => setUserRole(getAccountRoleLabel(role))).catch(() => {});
       }
     });
 
@@ -58,11 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         setUserEmail(session.user.email);
         const namePart = session.user.email.split('@')[0];
         setUserInitials(namePart.slice(0, 2).toUpperCase());
-        if (session.user.email.toLowerCase().includes('superadmin')) {
-          setUserRole('Super Admin');
-        } else {
-          setUserRole('HR Admin');
-        }
+        getAccountRole(session.user.id, session.user.email).then((role) => setUserRole(getAccountRoleLabel(role))).catch(() => {});
       }
     });
 
