@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getCurrentUser } from '@/app/(auth)/actions';
 
 /**
  * POST /api/migrate
@@ -7,6 +8,10 @@ import { NextResponse } from 'next/server';
  * This endpoint should only be called once, from the Super Admin settings page.
  */
 export async function POST() {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ success: false, error: 'Authentication required.' }, { status: 401 });
+  if (user.role !== 'super_admin') return NextResponse.json({ success: false, error: 'Super Admin access required.' }, { status: 403 });
+
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 

@@ -1,43 +1,22 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Logo } from '@/components/ui/Logo';
 import { AlertBanner } from '@/components/ui/ErrorState';
-import { createClient } from '@/lib/supabase/client';
-import { getAccountRole } from '@/lib/auth/account-role';
-import type { User } from '@supabase/supabase-js';
+import { loginAction } from '../actions';
+import { getSafeReturnUrl } from '@/lib/auth/redirect';
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const returnUrl = searchParams.get('returnUrl') || '/dashboard';
+  const returnUrl = getSafeReturnUrl(searchParams.get('returnUrl'));
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const setAdminSession = async (user: User) => {
-    const role = await getAccountRole(user.id, user.email);
-    if (typeof document !== 'undefined') {
-      document.cookie = 'innov8it_auth_user=admin; path=/; max-age=604800; SameSite=Lax';
-      try {
-        localStorage.setItem(
-          'innov8it_current_user',
-          JSON.stringify({
-            id: user.id,
-            name: user.user_metadata?.full_name || (role === 'super_admin' ? 'HR Administrator' : user.email),
-            email: user.email,
-            role,
-          })
-        );
-      } catch {}
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,31 +25,16 @@ function LoginForm() {
     setIsLoading(true);
     setErrorMessage(null);
 
-    const cleanEmail = email.trim().toLowerCase();
-
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
-        password,
-      });
-
-      if (error) {
-        setErrorMessage(error.message);
-        setIsLoading(false);
-        return;
-      }
-
-      if (data.session) {
-        await setAdminSession(data.session.user);
-        router.push(returnUrl);
-        router.refresh();
-      } else {
-        setErrorMessage('Check your email inbox to confirm your account before signing in.');
-        setIsLoading(false);
-      }
-    } catch (err: any) {
-      setErrorMessage(err.message || 'An unexpected error occurred during authentication.');
+      const formData = new FormData();
+      formData.set('email', email);
+      formData.set('password', password);
+      formData.set('returnUrl', returnUrl);
+      const result = await loginAction(formData);
+      if (!result.success) setErrorMessage(result.error || 'Unable to sign in. Please try again.');
+    } catch {
+      setErrorMessage('Unable to sign in. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -99,6 +63,7 @@ function LoginForm() {
           label="Work Email Address"
           type="email"
           id="login-email"
+          autoComplete="username"
           placeholder="hr.innov8it@gmail.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -116,6 +81,7 @@ function LoginForm() {
           label="Password"
           type="password"
           id="login-password"
+          autoComplete="current-password"
           placeholder="••••••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -130,10 +96,6 @@ function LoginForm() {
         />
 
         <div style={{ margin: '0.5rem 0 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
-            <input type="checkbox" style={{ accentColor: 'var(--brand-blue)' }} />
-            Remember me
-          </label>
           <a href="#" onClick={(e) => { e.preventDefault(); alert('Please contact your Innov8IT HR administrator at hr.innov8it@gmail.com to reset your credentials.'); }} style={{ fontSize: '0.82rem', color: 'var(--brand-blue)', fontWeight: 600 }}>
             Forgot password?
           </a>

@@ -238,6 +238,22 @@
   gap: 1.25rem;
 }
 
+/* Keep account details in the sidebar when space is limited. */
+@media (max-width: 640px) {
+  .topbar-left { min-width: 0; gap: 0.65rem; }
+  .page-breadcrumb { min-width: 0; }
+  .page-breadcrumb > span:not(.page-title) { display: none; }
+  .page-breadcrumb .page-title {
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .topbar-right { flex-shrink: 0; }
+  .topbar-right > .badge,
+  .topbar-right > span { display: none; }
+}
+
 .system-status-indicator {
   display: flex;
   align-items: center;

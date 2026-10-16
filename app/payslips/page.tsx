@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import { AppShell } from '@/components/layout/AppShell';
+import { usePortalUser } from '@/lib/auth/use-portal-user';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -24,39 +25,14 @@ import { getPayslips, syncPayslipsFromRun, deletePayslip } from '@/lib/payslips/
 import { getPayrollRuns } from '@/lib/payroll/runs-actions';
 import { PayrollRun } from '@/types/payroll';
 
-// Role simulation users for permission testing (Phase 10)
-const SIMULATED_USERS: Record<string, PayslipAccessUser> = {
-  admin: {
-    id: 'user-admin-001',
-    name: 'Innov8IT Admin',
-    email: 'hr.innov8it@gmail.com',
-    role: 'admin',
-  },
-  payroll_hr: {
-    id: 'user-hr-001',
-    name: 'Maria Santos (HR Manager)',
-    email: 'maria.santos@innov8it.ph',
-    role: 'payroll_hr',
-  },
-  employee_juan: {
-    id: 'emp-001',
-    name: 'Juan Dela Cruz (Employee)',
-    email: 'juan.delacruz@innov8it.ph',
-    role: 'employee',
-    employeeId: 'emp-001',
-  },
-  employee_ana: {
-    id: 'emp-002',
-    name: 'Ana Patricia Reyes (Employee)',
-    email: 'ana.reyes@innov8it.ph',
-    role: 'employee',
-    employeeId: 'emp-002',
-  },
-};
-
 export default function PayslipsPage() {
-  const [selectedUserKey, setSelectedUserKey] = useState<string>('admin');
-  const currentUser = SIMULATED_USERS[selectedUserKey];
+  const authenticatedUser = usePortalUser();
+  const currentUser: PayslipAccessUser = {
+    id: authenticatedUser?.id || '',
+    name: authenticatedUser?.fullName || authenticatedUser?.email || '',
+    email: authenticatedUser?.email || '',
+    role: authenticatedUser?.role === 'super_admin' ? 'admin' : (authenticatedUser?.role || 'employee'),
+  };
 
   const [payslips, setPayslips] = useState<Payslip[]>([]);
   const [runs, setRuns] = useState<PayrollRun[]>([]);
@@ -70,6 +46,7 @@ export default function PayslipsPage() {
   const [periodFilter, setPeriodFilter] = useState<string>('all');
 
   const handleSyncAllPayslips = async () => {
+    if (!authenticatedUser || currentUser.role === 'employee') return;
     setSyncing(true);
     try {
       const runsList = await getPayrollRuns();
@@ -104,7 +81,7 @@ export default function PayslipsPage() {
     setLoading(true);
     try {
       // Sync any approved/paid runs if available
-      const runsList = await getPayrollRuns();
+      const runsList = user.role === 'employee' ? [] : await getPayrollRuns();
       setRuns(runsList);
 
       // Sync all payroll runs to ensure generated/published payslips exist
@@ -129,8 +106,8 @@ export default function PayslipsPage() {
   };
 
   useEffect(() => {
-    loadData(currentUser);
-  }, [selectedUserKey, statusFilter, periodFilter]);
+    if (authenticatedUser) void loadData(currentUser);
+  }, [authenticatedUser?.id, authenticatedUser?.role, statusFilter, periodFilter]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -186,7 +163,7 @@ export default function PayslipsPage() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          {authenticatedUser && currentUser.role !== 'employee' && <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             <Button
               variant="outline"
               size="sm"
@@ -200,7 +177,7 @@ export default function PayslipsPage() {
                 View Payroll Runs
               </Button>
             </Link>
-          </div>
+          </div>}
         </div>
 
 
@@ -372,7 +349,7 @@ export default function PayslipsPage() {
 
                       <TableCell align="right">
                         <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
-                          <Link href={`/payslips/${item.id}?as=${selectedUserKey}`}>
+                          <Link href={`/payslips/${item.id}`}>
                             <Button size="sm" variant="outline" id={`btn-view-${item.id}`}>
                               View Payslip
                             </Button>

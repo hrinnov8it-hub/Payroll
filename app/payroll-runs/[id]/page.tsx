@@ -36,7 +36,7 @@ import {
 import { syncPayslipsFromRun } from '@/lib/payslips/actions';
 import { getPayrollSettings } from '@/lib/payroll/settings-actions';
 import { getPayrollApprovalName, resolvePayrollActorName } from '@/lib/payroll/signatory';
-import { resolveAccountRole } from '@/lib/auth/account-role';
+import { usePortalUser } from '@/lib/auth/use-portal-user';
 import { PayrollSnapshotModal } from '@/components/payroll/PayrollSnapshotModal';
 import {
   submitForReview,
@@ -120,9 +120,10 @@ export default function PayrollRunDetailPage() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Phase 9: Review & Approval state
-  const [activeRole, setActiveRole] = useState<UserRole>('employee');
-  const [userName, setUserName] = useState<string>('HR Admin');
-  const [userId, setUserId] = useState<string>('');
+  const authenticatedUser = usePortalUser();
+  const activeRole = authenticatedUser?.role || 'employee';
+  const userName = authenticatedUser?.fullName || authenticatedUser?.email || '';
+  const userId = authenticatedUser?.id || '';
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [editingNameValue, setEditingNameValue] = useState<string>('');
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
@@ -143,23 +144,6 @@ export default function PayrollRunDetailPage() {
   const [signatoryName, setSignatoryName] = useState<string>('');
   const [signatoryTitle, setSignatoryTitle] = useState<string>('');
   const [showSignatory, setShowSignatory] = useState<boolean>(false);
-
-  // Initial user name from localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedName = localStorage.getItem('innov8it_user_name');
-      if (storedName) setUserName(storedName);
-      try {
-        const storedUser = localStorage.getItem('innov8it_current_user');
-        if (storedUser) {
-          const parsed = JSON.parse(storedUser);
-          if (!storedName && parsed?.name) setUserName(parsed.name);
-          if (parsed?.id) setUserId(parsed.id);
-          setActiveRole(resolveAccountRole(parsed?.email, parsed?.role));
-        }
-      } catch {}
-    }
-  }, []);
 
   const currentUser = {
     id: userId,

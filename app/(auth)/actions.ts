@@ -2,7 +2,8 @@
 
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import type { AuthUser, UserRole } from '@/types/auth';
+import type { AuthUser } from '@/types/auth';
+import { getSafeReturnUrl } from '@/lib/auth/redirect';
 
 export interface LoginActionResult {
   success: boolean;
@@ -13,11 +14,12 @@ export interface LoginActionResult {
  * Server Action for user login with email and password
  */
 export async function loginAction(formData: FormData): Promise<LoginActionResult> {
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
-  const returnUrl = (formData.get('returnUrl') as string) || '/dashboard';
+  const emailValue = formData.get('email');
+  const password = formData.get('password');
+  const email = typeof emailValue === 'string' ? emailValue.trim().toLowerCase() : '';
+  const returnUrl = getSafeReturnUrl(formData.get('returnUrl'));
 
-  if (!email || !password) {
+  if (!email || typeof password !== 'string' || !password) {
     return {
       success: false,
       error: 'Please provide both your work email and password.',
@@ -34,7 +36,7 @@ export async function loginAction(formData: FormData): Promise<LoginActionResult
   if (error) {
     return {
       success: false,
-      error: error.message || 'Authentication failed. Please verify your credentials.',
+      error: 'Unable to sign in. Check your email and password and try again.',
     };
   }
 
@@ -53,7 +55,8 @@ export async function loginAction(formData: FormData): Promise<LoginActionResult
  */
 export async function logoutAction() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut();
+  if (error) throw new Error('Unable to sign out. Please try again.');
   redirect('/login');
 }
 
@@ -77,7 +80,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     return {
       id: user.id,
       email: user.email || '',
-      role: (profile?.role as UserRole) || 'employee',
+      role: profile?.role === 'super_admin' || profile?.role === 'admin' || profile?.role === 'payroll_hr' ? profile.role : 'employee',
       fullName: profile?.full_name || (user.user_metadata?.full_name as string) || user.email?.split('@')[0],
     };
   } catch {

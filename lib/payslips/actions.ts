@@ -400,7 +400,7 @@ export async function getPayslipById(
 
   if (!payslip) {
     try {
-      const all = await getPayslips(undefined, undefined);
+      const all = await getPayslips(undefined, currentUser);
       payslip = all.find((p) => p.id === id || p.payslip_number === id);
     } catch {}
   }

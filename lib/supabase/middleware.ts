@@ -1,6 +1,8 @@
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Database } from '@/types/database';
+import { getSupabaseConfig } from './config';
+import { getSafeReturnUrl } from '@/lib/auth/redirect';
 
 /**
  * Handles session token refreshing and route protection via Next.js middleware
@@ -10,22 +12,27 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return supabaseResponse;
+  const finish = (response: NextResponse) => {
+    for (const cookie of supabaseResponse.cookies.getAll()) response.cookies.set(cookie);
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
+  };
+  let config: ReturnType<typeof getSupabaseConfig>;
+  try {
+    config = getSupabaseConfig();
+  } catch {
+    return finish(NextResponse.json({ error: 'Authentication is not configured.' }, { status: 503 }));
   }
 
   const supabase = createServerClient<Database>(
-    supabaseUrl,
-    supabaseAnonKey,
+    config.url,
+    config.key,
     {
       cookies: {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
+        setAll(cookiesToSet: Array<{ name: string; value: string; options: CookieOptions }>) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({
             request,
@@ -38,39 +45,32 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Authenticate user securely
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const localAdminCookie = request.cookies.get('innov8it_auth_user')?.value;
-  const isAuthenticated = !!user || !!localAdminCookie;
+  // Only Auth-validated sessions grant access; custom cookies are never trusted.
+  let user = null;
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (!error) user = data.user;
+  } catch {
+    // Deny private access if Auth is unavailable.
+  }
 
   const pathname = request.nextUrl.pathname;
-  const isAuthPage = pathname === '/login' || pathname.startsWith('/(auth)');
-  const isProtectedPage =
-    pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/employees') ||
-    pathname.startsWith('/attendance') ||
-    pathname.startsWith('/payroll') ||
-    pathname.startsWith('/payslips') ||
-    pathname.startsWith('/reports') ||
-    pathname.startsWith('/settings');
-
-  // If user is not logged in and attempts to access protected routes, redirect to login
-  if (!isAuthenticated && isProtectedPage) {
+  if (!user && pathname !== '/login') {
+    if (pathname.startsWith('/api/')) {
+      return finish(NextResponse.json({ success: false, error: 'Authentication required.' }, { status: 401 }));
+    }
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    url.searchParams.set('returnUrl', pathname);
-    return NextResponse.redirect(url);
+    url.search = '';
+    url.searchParams.set('returnUrl', getSafeReturnUrl(pathname + request.nextUrl.search));
+    return finish(NextResponse.redirect(url, 303));
   }
 
   // If user is already authenticated and visits the login page, redirect to dashboard
-  if (isAuthenticated && isAuthPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
+  if (user && pathname === '/login') {
+    const url = new URL(getSafeReturnUrl(request.nextUrl.searchParams.get('returnUrl')), request.url);
+    return finish(NextResponse.redirect(url, 303));
   }
 
-  return supabaseResponse;
+  return finish(supabaseResponse);
 }

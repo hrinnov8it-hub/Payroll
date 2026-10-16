@@ -21,8 +21,8 @@ export function getAccountRoleLabel(role: UserRole): string {
 export async function getAccountRole(id: string, email?: string | null): Promise<UserRole> {
   try {
     const { data } = await createClient().from('profiles').select('role').eq('id', id).maybeSingle();
-    return resolveAccountRole(email, (data as { role: string } | null)?.role);
+    return resolveAccountRole(null, (data as { role: string } | null)?.role);
   } catch {
-    return resolveAccountRole(email);
+    return 'employee';
   }
 }

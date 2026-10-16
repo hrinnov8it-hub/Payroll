@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { AppShell } from '@/components/layout/AppShell';
+import { usePortalUser } from '@/lib/auth/use-portal-user';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingState } from '@/components/ui/LoadingState';
@@ -12,48 +13,17 @@ import { PayslipPrintButton } from '@/components/payslips/PayslipPrintButton';
 import { Payslip, PayslipAccessUser } from '@/types/payslip';
 import { getPayslipById, markPayslipAsViewed } from '@/lib/payslips/actions';
 
-// Role simulation users for Phase 10 access verification
-const SIMULATED_USERS: Record<string, PayslipAccessUser> = {
-  admin: {
-    id: 'user-admin-001',
-    name: 'Innov8IT Admin',
-    email: 'hr.innov8it@gmail.com',
-    role: 'admin',
-  },
-  payroll_hr: {
-    id: 'user-hr-001',
-    name: 'Maria Santos (HR Manager)',
-    email: 'maria.santos@innov8it.ph',
-    role: 'payroll_hr',
-  },
-  employee_juan: {
-    id: 'emp-001',
-    name: 'Juan Dela Cruz (Employee)',
-    email: 'juan.delacruz@innov8it.ph',
-    role: 'employee',
-    employeeId: 'emp-001',
-  },
-  employee_ana: {
-    id: 'emp-002',
-    name: 'Ana Patricia Reyes (Employee)',
-    email: 'ana.reyes@innov8it.ph',
-    role: 'employee',
-    employeeId: 'emp-002',
-  },
-};
-
 export default function PayslipDetailPage() {
   const params = useParams();
-  const searchParams = useSearchParams();
-  const router = useRouter();
 
   const id = params?.id as string;
-  const initialAs = searchParams?.get('as') || 'admin';
-
-  const [selectedUserKey, setSelectedUserKey] = useState<string>(
-    SIMULATED_USERS[initialAs] ? initialAs : 'admin'
-  );
-  const currentUser = SIMULATED_USERS[selectedUserKey];
+  const authenticatedUser = usePortalUser();
+  const currentUser: PayslipAccessUser = {
+    id: authenticatedUser?.id || '',
+    name: authenticatedUser?.fullName || authenticatedUser?.email || '',
+    email: authenticatedUser?.email || '',
+    role: authenticatedUser?.role === 'super_admin' ? 'admin' : (authenticatedUser?.role || 'employee'),
+  };
 
   const [payslip, setPayslip] = useState<Payslip | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,13 +59,9 @@ export default function PayslipDetailPage() {
   };
 
   useEffect(() => {
-    fetchPayslip(currentUser);
-  }, [id, selectedUserKey]);
+    if (authenticatedUser) void fetchPayslip(currentUser);
+  }, [id, authenticatedUser?.id, authenticatedUser?.role]);
 
-  const handlePersonaChange = (key: string) => {
-    setSelectedUserKey(key);
-    router.replace(`/payslips/${id}?as=${key}`);
-  };
 
   return (
     <AppShell>

@@ -17,7 +17,7 @@ const DEFAULT_DEPARTMENTS = [
 /**
  * Synchronizes all local and default data into Supabase
  */
-export async function syncAllDataToSupabase(): Promise<{
+export async function syncAllDataToSupabase(client?: ReturnType<typeof createClient>): Promise<{
   success: boolean;
   synced: {
     departments: number;
@@ -31,7 +31,7 @@ export async function syncAllDataToSupabase(): Promise<{
   };
   errors: string[];
 }> {
-  const supabase = createClient();
+  const supabase = client ?? createClient();
   const errors: string[] = [];
   const stats = {
     departments: 0,

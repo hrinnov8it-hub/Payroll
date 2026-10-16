@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/ui/Logo';
-import { createClient } from '@/lib/supabase/client';
-import { getAccountRole, getAccountRoleLabel, resolveAccountRole } from '@/lib/auth/account-role';
+import { usePortalUser } from '@/lib/auth/use-portal-user';
+import { signOut } from '@/lib/auth/sign-out';
+import { getAccountRoleLabel } from '@/lib/auth/account-role';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -14,67 +15,12 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
-  const [userEmail, setUserEmail] = useState<string>('hr.innov8it@gmail.com');
-  const [userInitials, setUserInitials] = useState<string>('HR');
-  const [userRole, setUserRole] = useState<string>('Super Admin');
-
-  useEffect(() => {
-    // 1. Check local session
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('innov8it_current_user');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed?.email) {
-            setUserEmail(parsed.email);
-            const namePart = parsed.email.split('@')[0];
-            setUserInitials(namePart.slice(0, 2).toUpperCase());
-            setUserRole(getAccountRoleLabel(resolveAccountRole(parsed.email, parsed.role)));
-          }
-        }
-      } catch {}
-    }
-
-    // 2. Check Supabase session
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.email) {
-        setUserEmail(user.email);
-        const namePart = user.email.split('@')[0];
-        setUserInitials(namePart.slice(0, 2).toUpperCase());
-        getAccountRole(user.id, user.email).then((role) => setUserRole(getAccountRoleLabel(role))).catch(() => {});
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user?.email) {
-        setUserEmail(session.user.email);
-        const namePart = session.user.email.split('@')[0];
-        setUserInitials(namePart.slice(0, 2).toUpperCase());
-        getAccountRole(session.user.id, session.user.email).then((role) => setUserRole(getAccountRoleLabel(role))).catch(() => {});
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
+  const user = usePortalUser();
+  const userEmail = user?.email || 'Loading account...';
+  const userInitials = user?.email.slice(0, 2).toUpperCase() || '...';
+  const userRole = user ? getAccountRoleLabel(user.role) : 'Verifying session...';
   const handleSignOut = async () => {
-    try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-    } catch {}
-
-    if (typeof document !== 'undefined') {
-      document.cookie = 'innov8it_auth_user=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      try {
-        localStorage.removeItem('innov8it_current_user');
-        sessionStorage.clear();
-      } catch {}
-    }
-
-    window.location.href = '/login';
+    try { await signOut(); } catch { alert('Unable to sign out. Please try again.'); }
   };
 
   const navItems = [
@@ -170,6 +116,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     },
   ];
 
+  const visibleNavItems = navItems.map(section => ({
+    ...section,
+    items: section.items.filter(item => user && (user.role !== 'employee' || item.href === '/payslips')),
+  })).filter(section => section.items.length > 0);
+
   return (
     <>
       <div
@@ -183,7 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
 
         <nav className="sidebar-nav">
-          {navItems.map((section, idx) => (
+          {visibleNavItems.map((section, idx) => (
             <div key={idx}>
               <div className="nav-section-title">{section.title}</div>
               {section.items.map((item) => {

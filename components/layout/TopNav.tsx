@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { createClient } from '@/lib/supabase/client';
-import { getAccountRole, getAccountRoleLabel, resolveAccountRole } from '@/lib/auth/account-role';
+import { usePortalUser } from '@/lib/auth/use-portal-user';
+import { signOut } from '@/lib/auth/sign-out';
+import { getAccountRoleLabel } from '@/lib/auth/account-role';
 
 interface TopNavProps {
   onToggleSidebar: () => void;
@@ -16,56 +16,14 @@ export const TopNav: React.FC<TopNavProps> = ({
   onToggleSidebar,
   title = 'Dashboard',
 }) => {
-  const router = useRouter();
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string>('Super Admin');
+  const user = usePortalUser();
+  const userEmail = user?.email || 'Loading account...';
+  const userRole = user ? getAccountRoleLabel(user.role) : 'Verifying session...';
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  useEffect(() => {
-    // 1. Immediately check local session storage for instant badge rendering
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('innov8it_current_user');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed?.email) {
-            setUserEmail(parsed.email);
-            const role = resolveAccountRole(parsed.email, parsed.role);
-            setUserRole(getAccountRoleLabel(role));
-            localStorage.setItem('innov8it_current_user', JSON.stringify({ ...parsed, role }));
-          }
-        }
-      } catch {}
-    }
-
-    // 2. Fetch authenticated user from Supabase
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.email) {
-        setUserEmail(user.email);
-        getAccountRole(user.id, user.email).then((role) => setUserRole(getAccountRoleLabel(role))).catch(() => {});
-      } else {
-        setUserEmail((prev) => prev || 'hr.innov8it@gmail.com');
-      }
-    }).catch(() => {
-      setUserEmail((prev) => prev || 'hr.innov8it@gmail.com');
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user?.email) {
-        setUserEmail(session.user.email);
-        getAccountRole(session.user.id, session.user.email).then((role) => setUserRole(getAccountRoleLabel(role))).catch(() => {});
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
 
   // Automatically synchronize data to Supabase in background once per session
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (user && user.role !== 'employee') {
       const alreadySynced = sessionStorage.getItem('innov8it_auto_synced');
       if (!alreadySynced) {
         fetch('/api/sync', { method: 'POST' })
@@ -78,24 +36,14 @@ export const TopNav: React.FC<TopNavProps> = ({
           .catch(() => {});
       }
     }
-  }, []);
+  }, [user?.id, user?.role]);
 
   const handleSignOut = async () => {
     setIsLoggingOut(true);
-    try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-    } catch {}
-
-    if (typeof document !== 'undefined') {
-      document.cookie = 'innov8it_auth_user=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      try {
-        localStorage.removeItem('innov8it_current_user');
-        sessionStorage.clear();
-      } catch {}
+    try { await signOut(); } catch {
+      setIsLoggingOut(false);
+      alert('Unable to sign out. Please try again.');
     }
-
-    window.location.href = '/login';
   };
 
   return (
@@ -121,7 +69,7 @@ export const TopNav: React.FC<TopNavProps> = ({
 
       <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
         <Badge variant="brand" dot>
-          {userEmail || 'hr.innov8it@gmail.com'}
+          {userEmail}
         </Badge>
         <span
           style={{
