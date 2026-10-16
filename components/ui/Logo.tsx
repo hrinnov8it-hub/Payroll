@@ -23,8 +23,6 @@ export const Logo: React.FC<LogoProps> = ({
 
   const height = heightMap[size];
 
-  const shouldWrapCard = withCard || theme === 'dark';
-
   const logoImage = (
     <img
       src="/images/innov8it-logo.png"
@@ -38,7 +36,7 @@ export const Logo: React.FC<LogoProps> = ({
     />
   );
 
-  if (shouldWrapCard) {
+  if (withCard) {
     return (
       <div
         className={`innov8it-logo-card ${className}`}
