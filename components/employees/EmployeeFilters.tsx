@@ -5,6 +5,7 @@ import { Department, EmployeeFilters as FilterType, EmploymentType, PayType, Emp
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { WorkspaceIcon } from '@/components/ui/Workspace';
 
 interface EmployeeFiltersProps {
   filters: FilterType;
@@ -29,8 +30,10 @@ export const EmployeeFilters: React.FC<EmployeeFiltersProps> = ({
 
   return (
     <div className="employee-filter-bar">
+      <div className="workspace-filter-title"><WorkspaceIcon name="settings" size={17} />Find an employee</div>
       <div className="filter-search-box">
         <Input
+          aria-label="Search employees"
           placeholder="Search by name, employee ID, or email..."
           value={filters.search || ''}
           onChange={(e) => onChange({ ...filters, search: e.target.value })}
@@ -46,6 +49,7 @@ export const EmployeeFilters: React.FC<EmployeeFiltersProps> = ({
       <div className="filter-dropdown-group">
         <div className="filter-item">
           <Select
+            aria-label="Filter employees by department"
             value={filters.department_id || 'all'}
             onChange={(e) => onChange({ ...filters, department_id: e.target.value })}
             options={[
@@ -57,6 +61,7 @@ export const EmployeeFilters: React.FC<EmployeeFiltersProps> = ({
 
         <div className="filter-item">
           <Select
+            aria-label="Filter employees by status"
             value={filters.status || 'all'}
             onChange={(e) => onChange({ ...filters, status: e.target.value as EmployeeStatus | 'all' })}
             options={[
@@ -70,6 +75,7 @@ export const EmployeeFilters: React.FC<EmployeeFiltersProps> = ({
 
         <div className="filter-item">
           <Select
+            aria-label="Filter employees by employment type"
             value={filters.employment_type || 'all'}
             onChange={(e) =>
               onChange({ ...filters, employment_type: e.target.value as EmploymentType | 'all' })
@@ -86,6 +92,7 @@ export const EmployeeFilters: React.FC<EmployeeFiltersProps> = ({
 
         <div className="filter-item">
           <Select
+            aria-label="Filter employees by pay type"
             value={filters.pay_type || 'all'}
             onChange={(e) => onChange({ ...filters, pay_type: e.target.value as PayType | 'all' })}
             options={[

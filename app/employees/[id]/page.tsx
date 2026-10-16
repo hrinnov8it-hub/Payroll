@@ -101,14 +101,9 @@ export default function EmployeeProfilePage() {
       </div>
 
       {/* Hero Banner Card */}
-      <Card style={{ marginBottom: '1.5rem', overflow: 'hidden' }}>
-        <div
-          style={{
-            height: '80px',
-            background: 'linear-gradient(135deg, var(--brand-dark-blue) 0%, var(--brand-blue) 60%, var(--brand-accent) 100%)',
-          }}
-        />
-        <div style={{ padding: '0 2rem 1.75rem 2rem', position: 'relative' }}>
+      <Card className="workspace-profile-hero">
+        <div className="workspace-profile-cover" />
+        <div className="workspace-profile-identity">
           <div
             style={{
               display: 'flex',
@@ -121,22 +116,7 @@ export default function EmployeeProfilePage() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1.25rem' }}>
-              <div
-                style={{
-                  width: '84px',
-                  height: '84px',
-                  borderRadius: 'var(--radius-lg)',
-                  background: 'linear-gradient(135deg, var(--brand-dark-blue) 0%, var(--brand-blue) 100%)',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '2rem',
-                  fontWeight: 800,
-                  border: '4px solid #ffffff',
-                  boxShadow: 'var(--shadow-md)',
-                }}
-              >
+              <div className="workspace-profile-avatar">
                 {initials}
               </div>
               <div>

@@ -349,7 +349,7 @@ export default function PayrollRunDetailPage() {
 
   if (loading) {
     return (
-      <AppShell>
+      <AppShell pageTitle="Payroll run details">
         <div style={{ padding: '4rem 0' }}>
           <LoadingState message="Loading payroll run and approval records..." />
         </div>
@@ -359,7 +359,7 @@ export default function PayrollRunDetailPage() {
 
   if (!run) {
     return (
-      <AppShell>
+      <AppShell pageTitle="Payroll run details">
         <div style={{ maxWidth: '800px', margin: '3rem auto', textAlign: 'center' }}>
           <EmptyState title="Payroll Run Not Found" description="The requested payroll run could not be found." />
           <div style={{ marginTop: '1.5rem' }}>
@@ -384,7 +384,7 @@ export default function PayrollRunDetailPage() {
   const isLocked = run.status === 'locked';
 
   return (
-    <AppShell>
+    <AppShell pageTitle="Payroll run details">
       <div style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '3rem' }}>
         {/* Breadcrumb */}
         <div style={{ marginBottom: '1rem' }}>
@@ -409,15 +409,8 @@ export default function PayrollRunDetailPage() {
 
 
         {/* Run Header */}
-        <div
-          style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap',
-            gap: '1rem', padding: '1.5rem', backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)',
-            boxShadow: 'var(--shadow-sm)', marginBottom: '1.5rem',
-          }}
-        >
-          <div>
+        <div className="workspace-run-header">
+<div><div className="workspace-eyebrow">PAYROLL / RUN DETAILS</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
               <h1 style={{ margin: 0, color: 'var(--brand-dark-blue)', fontSize: '1.65rem', fontFamily: 'monospace' }}>
                 {run.run_number}
@@ -697,8 +690,8 @@ export default function PayrollRunDetailPage() {
                   ⚠️ Admin Danger Zone — Unlock Payroll Run
                 </div>
                 <div className="danger-zone-description">
-                  Unlocking a locked run restores it to PAID status for corrections. 
-                  This action is restricted to administrators, requires a documented reason, 
+                  Unlocking a locked run restores it to PAID status for corrections.
+                  This action is restricted to administrators, requires a documented reason,
                   and is permanently recorded in the audit log.
                 </div>
                 <Button

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHeader, WorkspaceStats, WorkspaceStat, PanelHeading } from '@/components/ui/Workspace';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -106,12 +107,8 @@ export default function EmployeesPage() {
   return (
     <AppShell pageTitle="Employee Directory">
       {/* Header Bar */}
-      <div className="dashboard-header">
-        <div className="dashboard-title-area">
-          <h1>Employee Management</h1>
-          <p>Innov8IT Master Staff Directory, Position Hierarchy & Compensation Profiles</p>
-        </div>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+      <PageHeader eyebrow="PEOPLE & ORGANIZATION" title="Employee directory" description="Manage your team, department assignments, and pay details." actions={<>
+<div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <Button variant="outline" size="sm" onClick={() => loadData()}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
@@ -127,78 +124,15 @@ export default function EmployeesPage() {
             Add New Employee
           </Button>
         </div>
-      </div>
+</>} />
 
       {/* KPI Stats */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-card-top">
-            <span className="stat-label">Total Headcount</span>
-            <div className="stat-icon stat-icon-blue">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            </div>
-          </div>
-          <div className="stat-value">{totalCount}</div>
-          <div className="stat-subtext">
-            <span>Enrolled Personnel</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-card-top">
-            <span className="stat-label">Active on Payroll</span>
-            <div className="stat-icon stat-icon-dark">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-            </div>
-          </div>
-          <div className="stat-value">{activeCount}</div>
-          <div className="stat-subtext">
-            <Badge variant="success" dot>Active in Cutoffs</Badge>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-card-top">
-            <span className="stat-label">Inactive / Separated</span>
-            <div className="stat-icon stat-icon-accent">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-              </svg>
-            </div>
-          </div>
-          <div className="stat-value">{inactiveCount}</div>
-          <div className="stat-subtext">
-            <span>On Leave or Terminated</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-card-top">
-            <span className="stat-label">Monthly Base Payroll</span>
-            <div className="stat-icon stat-icon-blue">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="2" x2="12" y2="22" />
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
-          </div>
-          <div className="stat-value number-mono">
-            ₱{totalMonthlyPayroll.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-          <div className="stat-subtext">
-            <span>Active Staff Sum</span>
-          </div>
-        </div>
-      </div>
+      <WorkspaceStats label="Employee summary">
+  <WorkspaceStat label="Team members" value={totalCount} hint="Employees in the current view" icon="people" loading={loading} />
+  <WorkspaceStat label="Active on payroll" value={activeCount} hint="Employees with active status" icon="check" tone="green" loading={loading} />
+  <WorkspaceStat label="Inactive or separated" value={inactiveCount} hint="Inactive and terminated employees" icon="clock" tone="amber" loading={loading} />
+  <WorkspaceStat label="Base compensation" value={new Intl.NumberFormat('en-PH', {style:'currency', currency:'PHP'}).format(totalMonthlyPayroll)} hint="Basic salary sum for active staff" icon="wallet" tone="blue" loading={loading} />
+</WorkspaceStats>
 
       {/* Filter Bar */}
       <EmployeeFilters
@@ -210,6 +144,7 @@ export default function EmployeesPage() {
 
       {/* Directory Table Card */}
       <Card style={{ marginTop: '1.5rem' }}>
+<PanelHeading title="Employee directory" description="Profiles, departments, and compensation details." detail={employees.length + ' records'} />
         {loading ? (
           <div style={{ padding: '3rem 1rem' }}>
             <LoadingState title="Loading Staff Directory" message="Retrieving employee profiles, departments, and payroll details..." />

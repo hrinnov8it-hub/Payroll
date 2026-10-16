@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
-import { Badge } from '@/components/ui/Badge';
+import { PageHeader, WorkspaceIcon } from '@/components/ui/Workspace';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { GeneralSettingsTab } from '@/components/settings/GeneralSettingsTab';
 import { RatesSettingsTab } from '@/components/settings/RatesSettingsTab';
@@ -58,86 +58,24 @@ export default function SettingsPage() {
   return (
     <AppShell pageTitle="Payroll Configuration">
       {/* Header Bar */}
-      <div className="dashboard-header">
-        <div className="dashboard-title-area">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-            <h1 style={{ margin: 0 }}>Payroll Configuration & Rules</h1>
-            <Badge variant="success" dot>DOLE Compliant</Badge>
-          </div>
-          <p>
-            Manage disbursement cycles, statutory rate multipliers, taxable earnings, and loan deduction categories.
-          </p>
-        </div>
-      </div>
+      <PageHeader eyebrow="WORKSPACE CONFIGURATION" title="Payroll settings" description="Manage pay schedules, earnings, deductions, and company preferences." />
 
-      {/* Tabs Navigation */}
-      <div className="settings-tabs-container" style={{ marginBottom: '1.5rem' }}>
-        <div className="tab-pills">
-          <button
-            type="button"
-            className={`tab-pill ${activeTab === 'general' ? 'active' : ''}`}
-            onClick={() => setActiveTab('general')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
-              <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-              <line x1="16" x2="16" y1="2" y2="6" />
-              <line x1="8" x2="8" y1="2" y2="6" />
-              <line x1="3" x2="21" y1="10" y2="10" />
-            </svg>
-            Schedule & Operations
-          </button>
-
-          <button
-            type="button"
-            className={`tab-pill ${activeTab === 'rates' ? 'active' : ''}`}
-            onClick={() => setActiveTab('rates')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-            </svg>
-            Statutory Rates & Multipliers
-          </button>
-
-          <button
-            type="button"
-            className={`tab-pill ${activeTab === 'earnings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('earnings')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
-              <line x1="12" y1="1" x2="12" y2="23" />
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-            Earning & Allowance Types
-            <span className="tab-pill-badge">{earnings.length}</span>
-          </button>
-
-          <button
-            type="button"
-            className={`tab-pill ${activeTab === 'deductions' ? 'active' : ''}`}
-            onClick={() => setActiveTab('deductions')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
-              <circle cx="12" cy="12" r="10" />
-              <line x1="8" y1="12" x2="16" y2="12" />
-            </svg>
-            Deduction & Loan Types
-            <span className="tab-pill-badge">{deductions.length}</span>
-          </button>
-
-          <button
-            type="button"
-            className={`tab-pill ${activeTab === 'superadmin' ? 'active' : ''}`}
-            onClick={() => setActiveTab('superadmin')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
-            Super Admin
-            <span className="tab-pill-badge" style={{ backgroundColor: 'var(--brand-dark-blue)', color: '#ffffff', fontWeight: 700 }}>Root</span>
-          </button>
-        </div>
-      </div>
-
+      <div className="workspace-settings">
+        <nav className="workspace-settings-nav" aria-label="Payroll settings sections">
+          <div className="workspace-settings-nav-label">CONFIGURATION</div>
+          {([
+            { key: 'general', label: 'General settings', description: 'Company and pay schedules', icon: 'calendar' },
+            { key: 'rates', label: 'Rates & rules', description: 'Contribution and premium rates', icon: 'settings' },
+            { key: 'earnings', label: 'Earnings', description: 'Allowances and pay categories', icon: 'wallet', count: earnings.length },
+            { key: 'deductions', label: 'Deductions', description: 'Loans and deduction categories', icon: 'document', count: deductions.length },
+            { key: 'superadmin', label: 'Administration', description: 'Company and access controls', icon: 'shield' },
+          ] as const).map(item => <button key={item.key} type="button" aria-pressed={activeTab === item.key} onClick={() => setActiveTab(item.key)}>
+            <WorkspaceIcon name={item.icon} size={19} />
+            <span><strong>{item.label}</strong><small>{item.description}</small></span>
+            {'count' in item && <span className="workspace-settings-count">{item.count}</span>}
+          </button>)}
+        </nav>
+        <div className="workspace-settings-content">
       {/* Tab Content */}
       {loading ? (
         <div style={{ padding: '4rem 1rem' }}>
@@ -178,6 +116,8 @@ export default function SettingsPage() {
           )}
         </>
       )}
+        </div>
+      </div>
     </AppShell>
   );
 }

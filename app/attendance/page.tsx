@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHeader, WorkspaceStats, WorkspaceStat, PanelHeading } from '@/components/ui/Workspace';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -158,38 +159,18 @@ export default function AttendancePage() {
   };
 
   return (
-    <AppShell>
-      <div style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '3rem' }}>
+    <AppShell pageTitle="Attendance">
+      <div className="workspace-section">
         {/* Page Header */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            flexWrap: 'wrap',
-            gap: '1rem',
-            marginBottom: '1.5rem',
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <h1 style={{ margin: 0, color: 'var(--brand-dark-blue)', fontSize: '1.75rem', fontWeight: 800 }}>
-                Attendance & Time Inputs
-              </h1>
-              
-            </div>
-            <p style={{ margin: '0.35rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.92rem' }}>
-              Record Daily Time Records (DTR), overtime, night differential, tardiness, and holiday hours for payroll cutoffs.
-            </p>
-          </div>
-
-          {/* Period Selector */}
+        <PageHeader eyebrow="TIMEKEEPING" title="Attendance & time" description="Review attendance, overtime, and time records for each pay cycle." actions={<>
+{/* Period Selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)' }}>
               Payroll Cutoff:
             </span>
             <div style={{ minWidth: '260px' }}>
               <Select
+                aria-label="Payroll cutoff period"
                 value={selectedPeriodId}
                 onChange={(e) => setSelectedPeriodId(e.target.value)}
                 options={periods.map((p) => ({
@@ -199,7 +180,7 @@ export default function AttendancePage() {
               />
             </div>
           </div>
-        </div>
+</>} />
 
         {/* Success Toast */}
         {successToast && (
@@ -263,58 +244,16 @@ export default function AttendancePage() {
         )}
 
         {/* Metrics Overview Cards */}
-        <div className="attendance-summary-cards">
-          <div className="attendance-metric-card">
-            <span className="attendance-metric-label">Employees in Cutoff</span>
-            <span className="attendance-metric-value">{totalEmployees}</span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              {completedDTRs} of {totalEmployees} records logged
-            </span>
-          </div>
-
-          <div className="attendance-metric-card">
-            <span className="attendance-metric-label">Total Regular Hours</span>
-            <span className="attendance-metric-value" style={{ color: 'var(--brand-dark-blue)' }}>
-              {totalRegularHours.toFixed(1)} hrs
-            </span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Base workday productive time
-            </span>
-          </div>
-
-          <div className="attendance-metric-card">
-            <span className="attendance-metric-label">Overtime (OT)</span>
-            <span className="attendance-metric-value" style={{ color: '#1d4ed8' }}>
-              {totalOvertimeHours.toFixed(1)} hrs
-            </span>
-            <span style={{ fontSize: '0.75rem', color: '#1d4ed8' }}>
-              At 125% regular wage rate
-            </span>
-          </div>
-
-          <div className="attendance-metric-card">
-            <span className="attendance-metric-label">Night Diff (ND)</span>
-            <span className="attendance-metric-value" style={{ color: '#7e22ce' }}>
-              {totalNightDiffHours.toFixed(1)} hrs
-            </span>
-            <span style={{ fontSize: '0.75rem', color: '#7e22ce' }}>
-              10:00 PM – 6:00 AM premium
-            </span>
-          </div>
-
-          <div className="attendance-metric-card">
-            <span className="attendance-metric-label">Lates & Undertime</span>
-            <span className="attendance-metric-value" style={{ color: totalLateMinutes > 0 ? '#b91c1c' : 'var(--text-main)' }}>
-              {totalLateMinutes} mins
-            </span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              {totalAbsences > 0 ? `${totalAbsences} day(s) absent` : 'Zero unexcused absences'}
-            </span>
-          </div>
-        </div>
+        <WorkspaceStats columns={5} label="Attendance summary">
+  <WorkspaceStat label="Employees in cutoff" value={totalEmployees} hint={completedDTRs + ' records logged'} icon="people" loading={loading} />
+  <WorkspaceStat label="Regular hours" value={totalRegularHours.toFixed(1) + ' hrs'} hint="Recorded regular work time" icon="calendar" tone="blue" loading={loading} />
+  <WorkspaceStat label="Overtime" value={totalOvertimeHours.toFixed(1) + ' hrs'} hint="Recorded overtime hours" icon="clock" tone="amber" loading={loading} />
+  <WorkspaceStat label="Night differential" value={totalNightDiffHours.toFixed(1) + ' hrs'} hint="Recorded night shift hours" icon="clock" loading={loading} />
+  <WorkspaceStat label="Late minutes" value={totalLateMinutes + ' mins'} hint={totalAbsences + ' days absent'} icon="document" tone="amber" loading={loading} />
+</WorkspaceStats>
 
         {/* Filter & Search Bar */}
-        <Card style={{ marginBottom: '1.25rem', padding: '1rem 1.25rem' }}>
+        <Card className="workspace-filter-card" style={{ marginBottom: 18, padding: '18px 22px' }}>
           <div
             style={{
               display: 'flex',
@@ -327,6 +266,7 @@ export default function AttendancePage() {
             <div style={{ display: 'flex', gap: '1rem', flex: '1 1 300px', flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 220px' }}>
                 <Input
+                  aria-label="Search attendance records"
                   placeholder="Search by employee name or ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -335,6 +275,7 @@ export default function AttendancePage() {
 
               <div style={{ width: '200px' }}>
                 <Select
+                  aria-label="Filter attendance by department"
                   value={selectedDepartment}
                   onChange={(e) => setSelectedDepartment(e.target.value)}
                   options={[
@@ -353,6 +294,7 @@ export default function AttendancePage() {
 
         {/* Attendance Records Table */}
         <Card style={{ padding: 0, overflow: 'hidden' }}>
+<PanelHeading title="Time records" description="Review attendance for the selected pay period." detail={records.length + ' records'} />
           {loading ? (
             <div style={{ padding: '3rem 0' }}>
               <LoadingState message="Loading time & attendance records..." />

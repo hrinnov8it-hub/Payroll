@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHeader } from '@/components/ui/Workspace';
 import { EmployeeForm } from '@/components/employees/EmployeeForm';
 import { EmployeeFormData } from '@/types/employee';
 import { createEmployee } from '@/lib/employees/actions';
@@ -30,19 +30,7 @@ export default function NewEmployeePage() {
 
   return (
     <AppShell pageTitle="Add New Employee">
-      <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-          <Link href="/employees" style={{ color: 'var(--brand-blue)', textDecoration: 'none' }}>
-            Employees
-          </Link>
-          <span>/</span>
-          <span>Add New</span>
-        </div>
-        <h1 style={{ fontSize: '1.75rem', color: 'var(--brand-dark-blue)' }}>Enrol New Staff Member</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', marginTop: '0.25rem' }}>
-          Complete employee profile details, assign departmental hierarchy, and establish payroll compensation.
-        </p>
-      </div>
+      <PageHeader eyebrow="PEOPLE & ORGANIZATION" title="Add employee" description="Manage personal details, department assignment, and payroll rates." back={{ href: '/employees', label: 'Employee directory' }} />
 
       <EmployeeForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
     </AppShell>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHeader, WorkspaceIcon } from '@/components/ui/Workspace';
 import { Button } from '@/components/ui/Button';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { Badge } from '@/components/ui/Badge';
@@ -384,38 +385,19 @@ export default function ReportsPage() {
   };
 
   return (
-    <AppShell>
+    <AppShell pageTitle="Reports">
       <div className="dashboard-container reports-print-container" style={{ paddingBottom: '4rem' }}>
         {/* Header Bar */}
-        <div className="reports-no-print" style={{ marginBottom: '1.5rem' }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '1rem',
-            }}
-          >
-            <div>
-              <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--brand-dark-blue)', marginBottom: '0.25rem' }}>
-                Reports & Compliance Center
-              </h1>
-              <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)' }}>
-                Audit-ready payroll summaries, department cost allocations, DOLE overtime schedules, and Philippine statutory remittance reports.
-              </p>
-            </div>
+        <PageHeader eyebrow="PAYROLL INTELLIGENCE" title="Reports & insights" description="Explore payroll costs, department totals, and contribution reports." hideOnPrint actions={<>
 
-            <div className="reports-actions-group">
               <Button variant="outline" size="sm" onClick={handlePrint} id="btn-print-report">
-                🖨️ Print Report
+                <WorkspaceIcon name="print" size={16} /> Print report
               </Button>
               <Button variant="primary" size="sm" onClick={handleExportCSV} id="btn-export-csv">
-                📥 Export CSV
+                <WorkspaceIcon name="download" size={16} /> Export CSV
               </Button>
-            </div>
-          </div>
-        </div>
+
+</>} />
 
         {/* Executive KPI Metric Cards */}
         {kpis && (
@@ -469,9 +451,7 @@ export default function ReportsPage() {
           <div className="reports-filter-inputs">
             {/* Payroll Period Filter */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.2rem' }}>
-                Payroll Period
-              </label>
+              <label htmlFor="select-report-period" style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.2rem' }}>Payroll Period</label>
               <select
                 className="reports-filter-select"
                 value={selectedPeriod}
@@ -489,9 +469,7 @@ export default function ReportsPage() {
 
             {/* Department Filter */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.2rem' }}>
-                Department
-              </label>
+              <label htmlFor="select-report-department" style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.2rem' }}>Department</label>
               <select
                 className="reports-filter-select"
                 value={selectedDepartment}
@@ -509,9 +487,7 @@ export default function ReportsPage() {
 
             {/* Search Input */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.2rem' }}>
-                Filter Employee
-              </label>
+              <label htmlFor="input-report-search" style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.2rem' }}>Filter Employee</label>
               <input
                 type="text"
                 placeholder="Search name or ID..."
@@ -547,7 +523,7 @@ export default function ReportsPage() {
             onClick={() => setActiveTab('summary')}
             id="tab-btn-summary"
           >
-            📊 Payroll Summary
+            <WorkspaceIcon name="chart" size={16} /> Payroll summary
             <span className="reports-tab-badge">{summaryRows.length}</span>
           </button>
 
@@ -557,7 +533,7 @@ export default function ReportsPage() {
             onClick={() => setActiveTab('department_totals')}
             id="tab-btn-departments"
           >
-            🏢 Department Totals
+            <WorkspaceIcon name="people" size={16} /> Departments
             <span className="reports-tab-badge">{departmentRows.length}</span>
           </button>
 
@@ -567,7 +543,7 @@ export default function ReportsPage() {
             onClick={() => setActiveTab('government_contributions')}
             id="tab-btn-govt"
           >
-            🏛️ Government Compliance (SSS / PHIC / HDMF)
+            <WorkspaceIcon name="shield" size={16} /> Contributions
           </button>
 
           <button
@@ -576,7 +552,7 @@ export default function ReportsPage() {
             onClick={() => setActiveTab('tax_summary')}
             id="tab-btn-tax"
           >
-            📑 BIR Tax Summary
+            <WorkspaceIcon name="document" size={16} /> Tax summary
             <span className="reports-tab-badge">{taxRows.length}</span>
           </button>
 
@@ -586,7 +562,7 @@ export default function ReportsPage() {
             onClick={() => setActiveTab('overtime_night_diff')}
             id="tab-btn-overtime"
           >
-            ⏱️ Overtime & Night Diff
+            <WorkspaceIcon name="clock" size={16} /> Overtime & night shift
             <span className="reports-tab-badge">{otRows.length}</span>
           </button>
 
@@ -596,7 +572,7 @@ export default function ReportsPage() {
             onClick={() => setActiveTab('employee_history')}
             id="tab-btn-history"
           >
-            👤 Employee History
+            <WorkspaceIcon name="people" size={16} /> Employee history
           </button>
         </div>
 
@@ -1261,7 +1237,7 @@ export default function ReportsPage() {
             {activeTab === 'employee_history' && (
               <div>
                 {/* Employee Selector Bar */}
-                <div style={{ background: '#ffffff', padding: '1rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }} className="reports-no-print">
+                <div style={{ background: '#ffffff', padding: '1rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }} className="reports-no-print workspace-report-employee-filter">
                   <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--brand-dark-blue)' }}>
                     Select Employee:
                   </label>

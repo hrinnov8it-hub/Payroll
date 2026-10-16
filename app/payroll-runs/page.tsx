@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHeader, WorkspaceStats, WorkspaceStat, PanelHeading } from '@/components/ui/Workspace';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -153,32 +154,11 @@ export default function PayrollRunsPage() {
     .reduce((sum, r) => sum + Number(r.total_net_pay || 0), 0);
 
   return (
-    <AppShell>
-      <div style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '3rem' }}>
+    <AppShell pageTitle="Payroll runs">
+      <div className="workspace-section">
         {/* Page Header */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            flexWrap: 'wrap',
-            gap: '1rem',
-            marginBottom: '1.5rem',
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <h1 style={{ margin: 0, color: 'var(--brand-dark-blue)', fontSize: '1.75rem', fontWeight: 800 }}>
-                Payroll Runs
-              </h1>
-              
-            </div>
-            <p style={{ margin: '0.35rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.92rem' }}>
-              Create, process, recalculate, and track historical payroll calculation snapshots.
-            </p>
-          </div>
-
-          <Button
+        <PageHeader eyebrow="PAYROLL OPERATIONS" title="Payroll runs" description="Calculate payroll, review results, and follow every run through release." actions={<>
+<Button
             variant="primary"
             onClick={() => {
               setErrorMessage(null);
@@ -199,41 +179,17 @@ export default function PayrollRunsPage() {
             </svg>
             Process New Payroll Run
           </Button>
-        </div>
+</>} />
 
         {/* Overview Stats */}
-        <div className="attendance-summary-cards">
-          <div className="attendance-metric-card">
-            <span className="attendance-metric-label">Total Payroll Runs</span>
-            <span className="attendance-metric-value">{runs.length}</span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Historical payroll cycles recorded
-            </span>
-          </div>
-
-          <div className="attendance-metric-card">
-            <span className="attendance-metric-label">Pending Review / Draft</span>
-            <span className="attendance-metric-value" style={{ color: 'var(--brand-blue)' }}>
-              ₱{totalInReview.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-            </span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              {runs.filter((r) => r.status === 'review' || r.status === 'draft').length} active run(s)
-            </span>
-          </div>
-
-          <div className="attendance-metric-card">
-            <span className="attendance-metric-label">Total Disbursed (Paid)</span>
-            <span className="attendance-metric-value" style={{ color: 'var(--success)' }}>
-              ₱{totalDisbursed.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-            </span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Closed & released payrolls
-            </span>
-          </div>
-        </div>
+        <WorkspaceStats columns={3} label="Payroll run summary">
+  <WorkspaceStat label="Payroll runs" value={runs.length} hint="Recorded payroll calculations" icon="document" loading={loading} />
+  <WorkspaceStat label="Draft & review payroll" value={new Intl.NumberFormat('en-PH', {style:'currency', currency:'PHP'}).format(totalInReview)} hint={runs.filter(run => run.status === 'review' || run.status === 'draft').length + ' runs in draft or review'} icon="clock" tone="amber" loading={loading} />
+  <WorkspaceStat label="Paid payroll" value={new Intl.NumberFormat('en-PH', {style:'currency', currency:'PHP'}).format(totalDisbursed)} hint="Net payroll for runs marked paid" icon="wallet" tone="green" loading={loading} />
+</WorkspaceStats>
 
         {/* Filters */}
-        <Card style={{ marginBottom: '1.25rem', padding: '1rem 1.25rem' }}>
+        <Card className="workspace-filter-card" style={{ marginBottom: 18, padding: '18px 22px' }}>
           <div
             style={{
               display: 'flex',
@@ -249,6 +205,7 @@ export default function PayrollRunsPage() {
               </span>
               <div style={{ width: '180px' }}>
                 <Select
+                  aria-label="Filter payroll runs by status"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   options={[
@@ -272,6 +229,7 @@ export default function PayrollRunsPage() {
 
         {/* Runs Table */}
         <Card style={{ padding: 0, overflow: 'hidden' }}>
+<PanelHeading title="Run history" description="Follow each payroll from calculation to release." detail={filteredRuns.length + ' records'} />
           {loading ? (
             <div style={{ padding: '3rem 0' }}>
               <LoadingState message="Loading payroll runs..." />

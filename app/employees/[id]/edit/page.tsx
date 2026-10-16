@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHeader } from '@/components/ui/Workspace';
 import { EmployeeForm } from '@/components/employees/EmployeeForm';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -75,25 +75,7 @@ export default function EditEmployeePage() {
 
   return (
     <AppShell pageTitle={`Edit: ${employee.first_name} ${employee.last_name}`}>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-          <Link href="/employees" style={{ color: 'var(--brand-blue)', textDecoration: 'none' }}>
-            Employees
-          </Link>
-          <span>/</span>
-          <Link href={`/employees/${employee.id}`} style={{ color: 'var(--brand-blue)', textDecoration: 'none' }}>
-            {employee.employee_number}
-          </Link>
-          <span>/</span>
-          <span>Edit</span>
-        </div>
-        <h1 style={{ fontSize: '1.75rem', color: 'var(--brand-dark-blue)' }}>
-          Edit Employee: {employee.first_name} {employee.last_name}
-        </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', marginTop: '0.25rem' }}>
-          Update employee status, department assignment, job position, or payroll compensation rates.
-        </p>
-      </div>
+      <PageHeader eyebrow="PEOPLE & ORGANIZATION" title={`Edit ${employee.first_name} ${employee.last_name}`} description="Manage personal details, department assignment, and payroll rates." back={{ href: `/employees/${employee.id}`, label: 'Employee profile' }} />
 
       <EmployeeForm
         initialData={employee}

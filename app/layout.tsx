@@ -4,6 +4,7 @@ import '../styles/globals.css';
 import '../styles/layout.css';
 import '../styles/components.css';
 import '../styles/pages.css';
+import '../styles/workspace.css';
 
 const montserrat = Montserrat({
   subsets: ['latin'],

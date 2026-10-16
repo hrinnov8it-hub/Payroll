@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHeader } from '@/components/ui/Workspace';
 import { usePortalUser } from '@/lib/auth/use-portal-user';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -64,8 +65,9 @@ export default function PayslipDetailPage() {
 
 
   return (
-    <AppShell>
+    <AppShell pageTitle="Payslip details">
       <div className="dashboard-container" style={{ paddingBottom: '4rem' }}>
+<PageHeader eyebrow="PAYROLL DOCUMENTS" title={payslip?.payslip_number || 'Payslip details'} description={payslip?.employee_name || 'Review and print the employee payroll document.'} back={{ href: '/payslips', label: 'All payslips' }} hideOnPrint />
         {/* Navigation & Controls Bar (Hidden during printing) */}
         <div className="payslip-no-print" style={{ marginBottom: '1.5rem' }}>
           <div
@@ -79,11 +81,7 @@ export default function PayslipDetailPage() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Link href={`/payslips`}>
-                <Button variant="outline" size="sm">
-                  ← Back to Payslips
-                </Button>
-              </Link>
+
               {payslip && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--brand-dark-blue)' }}>

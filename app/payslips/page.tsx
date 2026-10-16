@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHeader, WorkspaceStats, WorkspaceStat, WorkspaceIcon, PanelHeading } from '@/components/ui/Workspace';
 import { usePortalUser } from '@/lib/auth/use-portal-user';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -147,30 +148,18 @@ export default function PayslipsPage() {
   const publishedCount = payslips.filter((p) => p.status === 'published' || p.status === 'viewed').length;
 
   return (
-    <AppShell>
+    <AppShell pageTitle="Payslips">
       <div className="dashboard-container" style={{ paddingBottom: '3rem' }}>
         {/* Header Area */}
-        <div className="dashboard-header">
-          <div className="dashboard-title-area">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-              <h1 style={{ margin: 0 }}>Payslips</h1>
-              
-            </div>
-            <p>
-              {currentUser.role === 'employee'
-                ? `Personal and confidential payslip records for ${currentUser.name}`
-                : 'Centralized employee payslip generation, review, distribution, and printing.'}
-            </p>
-          </div>
-
-          {authenticatedUser && currentUser.role !== 'employee' && <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <PageHeader eyebrow="PAYROLL DOCUMENTS" title="Payslips" description={currentUser.role === 'employee' ? 'Your personal payslips and payroll documents.' : 'Review employee payslips, distribution status, and payroll documents.'} actions={<>
+{authenticatedUser && currentUser.role !== 'employee' && <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             <Button
               variant="outline"
               size="sm"
               onClick={handleSyncAllPayslips}
               isLoading={syncing}
             >
-              🔄 Sync / Regenerate Payslips
+              <WorkspaceIcon name="document" size={16} /> Regenerate payslips
             </Button>
             <Link href="/payroll-runs">
               <Button variant="outline" size="sm">
@@ -178,56 +167,25 @@ export default function PayslipsPage() {
               </Button>
             </Link>
           </div>}
-        </div>
+</>} />
 
 
 
         {/* Summary Metric Cards */}
-        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: '1.5rem' }}>
-          <Card style={{ padding: '1.25rem' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-              {currentUser.role === 'employee' ? 'My Payslips' : 'Total Payslips'}
-            </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--brand-dark-blue)' }}>
-              {payslips.length}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-              {publishedCount} published & active
-            </div>
-          </Card>
-
-          <Card style={{ padding: '1.25rem' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-              {currentUser.role === 'employee' ? 'My Total Net Received' : 'Total Net Disbursed'}
-            </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#047857' }}>
-              {formatCurrency(totalNet)}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-              Gross total: {formatCurrency(totalGross)}
-            </div>
-          </Card>
-
-          <Card style={{ padding: '1.25rem' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-              Distribution Status
-            </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--brand-blue)' }}>
-              {payslips.length > 0 ? `${Math.round((publishedCount / payslips.length) * 100)}%` : '0%'}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-              {payslips.filter((p) => p.status === 'viewed').length} viewed by employees
-            </div>
-          </Card>
-        </div>
+        <WorkspaceStats columns={3} label="Payslip summary">
+  <WorkspaceStat label={currentUser.role === 'employee' ? 'My payslips' : 'Payslip records'} value={payslips.length} hint={publishedCount + ' published or viewed'} icon="document" loading={loading} />
+  <WorkspaceStat label="Net pay in this view" value={formatCurrency(totalNet)} hint={'Gross pay: ' + formatCurrency(totalGross)} icon="wallet" tone="blue" loading={loading} />
+  <WorkspaceStat label="Published or viewed" value={(payslips.length > 0 ? Math.round(publishedCount / payslips.length * 100) : 0) + '%'} hint={payslips.filter(p => p.status === 'viewed').length + ' viewed by employees'} icon="check" tone="green" loading={loading} />
+</WorkspaceStats>
 
         {/* Search & Filters */}
-        <Card style={{ marginBottom: '1.25rem', padding: '1rem 1.25rem' }}>
+        <Card className="workspace-filter-card" style={{ marginBottom: 18, padding: '18px 22px' }}>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', gap: '0.75rem', flex: 1, minWidth: '280px', maxWidth: '650px', flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: '200px' }}>
                 <Input
                   id="payslip-search"
+                  aria-label="Search payslips"
                   placeholder={
                     currentUser.role === 'employee'
                       ? 'Search by payslip number or period...'
@@ -241,6 +199,7 @@ export default function PayslipsPage() {
               <div style={{ width: '150px' }}>
                 <Select
                   id="filter-status"
+                  aria-label="Filter payslips by status"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   options={[
@@ -261,6 +220,7 @@ export default function PayslipsPage() {
 
         {/* Payslips Table */}
         <Card style={{ padding: 0, overflow: 'hidden' }}>
+<PanelHeading title="Payslip records" description="Payroll documents and their distribution status." detail={payslips.length + ' records'} />
           {loading ? (
             <div style={{ padding: '3.5rem 0' }}>
               <LoadingState message="Loading secure payslips..." />
