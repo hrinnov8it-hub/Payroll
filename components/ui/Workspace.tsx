@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
 
-export type WorkspaceIconName = 'people' | 'calendar' | 'wallet' | 'clock' | 'document' | 'check' | 'settings' | 'shield' | 'chart' | 'download' | 'print';
+export type WorkspaceIconName = 'people' | 'calendar' | 'wallet' | 'clock' | 'document' | 'check' | 'settings' | 'shield' | 'chart' | 'download' | 'print' | 'eye' | 'trash' | 'lock' | 'unlock' | 'undo';
 
 export function WorkspaceIcon({ name, size = 20 }: { name: WorkspaceIconName; size?: number }) {
   const paths: Record<WorkspaceIconName, ReactNode> = {
@@ -16,6 +16,11 @@ export function WorkspaceIcon({ name, size = 20 }: { name: WorkspaceIconName; si
     chart: <><path d="M4 3v17h17M8 15v-4M13 15V6M18 15v-7" /></>,
     download: <><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4" /></>,
     print: <><path d="M7 8V3h10v5M7 17H4V9h16v8h-3" /><path d="M7 14h10v7H7Z" /></>,
+    eye: <><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></>,
+    trash: <><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" /></>,
+    lock: <><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" /></>,
+    unlock: <><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0M12 14v3" /></>,
+    undo: <><path d="m7 4-5 5 5 5M2 9h12a7 7 0 0 1 0 14" /></>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }

@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { WorkspaceIcon } from '@/components/ui/Workspace';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import {
@@ -363,7 +364,7 @@ export default function PayrollRunDetailPage() {
         <div style={{ maxWidth: '800px', margin: '3rem auto', textAlign: 'center' }}>
           <EmptyState title="Payroll Run Not Found" description="The requested payroll run could not be found." />
           <div style={{ marginTop: '1.5rem' }}>
-            <Link href="/payroll-runs"><Button variant="primary">Return to Payroll Runs</Button></Link>
+            <ButtonLink href="/payroll-runs" variant="primary">Return to Payroll Runs</ButtonLink>
           </div>
         </div>
       </AppShell>
@@ -449,11 +450,9 @@ export default function PayrollRunDetailPage() {
 
           {/* Header Actions */}
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <Link href={`/payslips?periodId=${run.payroll_period_id}`}>
-              <Button variant="outline" size="sm" style={{ fontWeight: 600 }}>
-                📄 View Payslips ({run.total_employees})
-              </Button>
-            </Link>
+            <ButtonLink href={`/payslips?periodId=${run.payroll_period_id}`} variant="outline" size="sm" leftIcon={<WorkspaceIcon name="document" size={16} />}>
+              View Payslips ({run.total_employees})
+            </ButtonLink>
             <Button
               variant="outline"
               size="sm"
@@ -465,12 +464,12 @@ export default function PayrollRunDetailPage() {
               Recalculate
             </Button>
             <Button
-              variant="outline"
+              variant="danger-outline"
               size="sm"
               onClick={() => setShowDeleteModal(true)}
-              style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+              leftIcon={<WorkspaceIcon name="trash" size={16} />}
             >
-              🗑️ Delete Run
+              Delete Run
             </Button>
           </div>
         </div>
@@ -584,8 +583,9 @@ export default function PayrollRunDetailPage() {
                   size="sm"
                   onClick={() => handleApprovalAction('submit')}
                   isLoading={actionLoading}
+                  leftIcon={<WorkspaceIcon name="document" size={16} />}
                 >
-                  📋 Submit for Review →
+                  Submit for Review →
                 </Button>
               )}
 
@@ -596,21 +596,22 @@ export default function PayrollRunDetailPage() {
                   size="sm"
                   onClick={() => setShowReturnModal(true)}
                   isLoading={actionLoading}
+                  leftIcon={<WorkspaceIcon name="undo" size={16} />}
                 >
-                  ↩️ Return to Draft
+                  Return to Draft
                 </Button>
               )}
 
               {run.status === 'review' && permissions.canApprove && (
                 <Button
                   id="btn-approve"
-                  variant="primary"
+                  variant="success"
                   size="sm"
                   onClick={() => setShowApprovalNoteModal(true)}
                   isLoading={actionLoading}
-                  style={{ backgroundColor: '#15803d', borderColor: '#15803d' }}
+                  leftIcon={<WorkspaceIcon name="check" size={16} />}
                 >
-                  ✅ Approve Payroll Run
+                  Approve Payroll Run
                 </Button>
               )}
 
@@ -621,9 +622,9 @@ export default function PayrollRunDetailPage() {
                   size="sm"
                   onClick={() => handleApprovalAction('paid')}
                   isLoading={actionLoading}
-                  style={{ backgroundColor: '#0891b2', borderColor: '#0891b2' }}
+                  leftIcon={<WorkspaceIcon name="wallet" size={16} />}
                 >
-                  💰 Disburse & Mark as Paid ₱
+                  Disburse & Mark as Paid ₱
                 </Button>
               )}
 
@@ -634,21 +635,22 @@ export default function PayrollRunDetailPage() {
                   size="sm"
                   onClick={() => handleApprovalAction('lock')}
                   isLoading={actionLoading}
+                  leftIcon={<WorkspaceIcon name="lock" size={16} />}
                 >
-                  🔒 Lock & Archive Run
+                  Lock & Archive Run
                 </Button>
               )}
 
               {run.status === 'locked' && permissions.canUnlock && (
                 <Button
                   id="btn-unlock"
-                  variant="outline"
+                  variant="danger-outline"
                   size="sm"
                   onClick={() => setShowUnlockModal(true)}
                   isLoading={actionLoading}
-                  style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+                  leftIcon={<WorkspaceIcon name="unlock" size={16} />}
                 >
-                  🔓 Unlock Run (HR Admin)
+                  Unlock Run (HR Admin)
                 </Button>
               )}
 
@@ -696,12 +698,12 @@ export default function PayrollRunDetailPage() {
                 </div>
                 <Button
                   id="btn-unlock"
-                  variant="outline"
+                  variant="danger-outline"
                   size="sm"
                   onClick={() => setShowUnlockModal(true)}
-                  style={{ borderColor: '#dc2626', color: '#dc2626' }}
+                  leftIcon={<WorkspaceIcon name="unlock" size={16} />}
                 >
-                  🔓 Unlock Run (Admin Only)
+                  Unlock Run (Admin Only)
                 </Button>
               </div>
             )}
@@ -889,18 +891,13 @@ export default function PayrollRunDetailPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => setSelectedItem(item)}
+                              leftIcon={<WorkspaceIcon name="eye" size={16} />}
                             >
-                              👁️ View Snapshot
+                              View Snapshot
                             </Button>
-                            <Link href={`/payslips/ps-${item.id}`}>
-                              <Button
-                                id={`btn-payslip-${item.id}`}
-                                variant="accent"
-                                size="sm"
-                              >
-                                Payslip
-                              </Button>
-                            </Link>
+                            <ButtonLink href={`/payslips/ps-${item.id}`} id={`btn-payslip-${item.id}`} variant="accent" size="sm">
+                              Payslip
+                            </ButtonLink>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -934,11 +931,11 @@ export default function PayrollRunDetailPage() {
                 Cancel
               </Button>
               <Button
-                variant="primary"
+                variant="success"
                 size="sm"
                 isLoading={actionLoading}
                 onClick={() => handleApprovalAction('approve')}
-                style={{ backgroundColor: '#15803d', borderColor: '#15803d' }}
+
               >
                 Confirm Approval
               </Button>
@@ -998,11 +995,11 @@ export default function PayrollRunDetailPage() {
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <Button variant="outline" size="sm" onClick={() => { setShowUnlockModal(false); setUnlockReason(''); }}>Cancel</Button>
               <Button
-                variant="primary"
+                variant="danger"
                 size="sm"
                 isLoading={actionLoading}
                 onClick={handleUnlock}
-                style={{ backgroundColor: '#dc2626', borderColor: '#dc2626' }}
+
               >
                 Confirm Unlock
               </Button>
@@ -1042,11 +1039,11 @@ export default function PayrollRunDetailPage() {
                 Cancel
               </Button>
               <Button
-                variant="primary"
+                variant="danger"
                 size="sm"
                 isLoading={deleteLoading}
                 onClick={handleDeleteRun}
-                style={{ backgroundColor: '#dc2626', borderColor: '#dc2626' }}
+
               >
                 Delete Payroll Run
               </Button>

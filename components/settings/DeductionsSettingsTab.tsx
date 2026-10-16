@@ -145,7 +145,7 @@ export const DeductionsSettingsTab: React.FC<DeductionsSettingsTabProps> = ({
               <CardSubtitle>Manage non-statutory employee loan repayments, HMO premium co-pays, and cash advances</CardSubtitle>
             </div>
             <Button variant="primary" size="sm" onClick={openAddModal}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="16" />
                 <line x1="8" y1="12" x2="16" y2="12" />

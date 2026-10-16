@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
-import Link from 'next/link';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader, WorkspaceStats, WorkspaceStat, WorkspaceIcon, PanelHeading } from '@/components/ui/Workspace';
 import { usePortalUser } from '@/lib/auth/use-portal-user';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { LoadingState } from '@/components/ui/LoadingState';
@@ -161,11 +160,9 @@ export default function PayslipsPage() {
             >
               <WorkspaceIcon name="document" size={16} /> Regenerate payslips
             </Button>
-            <Link href="/payroll-runs">
-              <Button variant="outline" size="sm">
-                View Payroll Runs
-              </Button>
-            </Link>
+            <ButtonLink href="/payroll-runs" variant="outline" size="sm">
+              View Payroll Runs
+            </ButtonLink>
           </div>}
 </>} />
 
@@ -309,19 +306,17 @@ export default function PayslipsPage() {
 
                       <TableCell align="right">
                         <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
-                          <Link href={`/payslips/${item.id}`}>
-                            <Button size="sm" variant="outline" id={`btn-view-${item.id}`}>
-                              View Payslip
-                            </Button>
-                          </Link>
+                          <ButtonLink href={`/payslips/${item.id}`} size="sm" variant="outline" id={`btn-view-${item.id}`}>
+                            View Payslip
+                          </ButtonLink>
                           {currentUser.role !== 'employee' && (
                             <Button
                               size="sm"
-                              variant="outline"
+                              variant="danger-outline"
                               onClick={() => handleDeletePayslip(item)}
-                              style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+                              leftIcon={<WorkspaceIcon name="trash" size={16} />}
                             >
-                              🗑️ Delete
+                              Delete
                             </Button>
                           )}
                         </div>

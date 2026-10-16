@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardSubtitle, CardBody, CardFooter } from '@/components/ui/Card';
+import { Card, CardHeader, CardTitle, CardSubtitle, CardBody } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
@@ -243,32 +243,11 @@ export const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({
         </CardBody>
       </Card>
 
-      <Card style={{ marginBottom: '1.5rem' }}>
-        <CardHeader>
-          <CardTitle>Statutory Deductions</CardTitle>
-          <CardSubtitle>Enable or disable automatic computation of mandatory government contributions</CardSubtitle>
-        </CardHeader>
-        <CardBody>
-          <div className="form-grid-2">
-            <Select
-              label="Enable Statutory Deductions (SSS, PhilHealth, Pag-IBIG)"
-              value={settings.enable_statutory_deductions ? 'true' : 'false'}
-              onChange={(e) =>
-                setSettings({ ...settings, enable_statutory_deductions: e.target.value === 'true' })
-              }
-              options={[
-                { label: 'Enabled (Compute contributions automatically)', value: 'true' },
-                { label: 'Disabled (Do not compute contributions)', value: 'false' },
-              ]}
-            />
-          </div>
-        </CardBody>
-        <CardFooter style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button type="submit" variant="primary" isLoading={saving}>
-            Save Operational Settings
-          </Button>
-        </CardFooter>
-      </Card>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <Button type="submit" variant="primary" isLoading={saving}>
+          Save Operational Settings
+        </Button>
+      </div>
     </form>
   );
 };

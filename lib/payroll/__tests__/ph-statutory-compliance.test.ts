@@ -45,19 +45,43 @@ export function runPhilippineComplianceTests(): { passed: number; failed: number
   // Test 1a: Salary ₱25,000 (Crosses into WISP above ₱20,000)
   const sss25k = calculateSSSContribution(25000, true);
   assert(sss25k.monthly_salary_credit === 25000, 'SSS MSC for ₱25,000 salary', `Got ${sss25k.monthly_salary_credit}`);
-  assert(sss25k.regular_ss_employee === 900.0, 'SSS Regular EE share (4.5% of ₱20k = ₱900)', `Got ${sss25k.regular_ss_employee}`);
-  assert(sss25k.regular_ss_employer === 1900.0, 'SSS Regular ER share (9.5% of ₱20k = ₱1,900)', `Got ${sss25k.regular_ss_employer}`);
-  assert(sss25k.wisp_employee === 225.0, 'SSS WISP EE share (4.5% of ₱5k excess = ₱225)', `Got ${sss25k.wisp_employee}`);
-  assert(sss25k.wisp_employer === 475.0, 'SSS WISP ER share (9.5% of ₱5k excess = ₱475)', `Got ${sss25k.wisp_employer}`);
+  assert(sss25k.regular_ss_employee === 1000.0, 'SSS Regular EE share (5% of ₱20k = ₱1,000)', `Got ${sss25k.regular_ss_employee}`);
+  assert(sss25k.regular_ss_employer === 2000.0, 'SSS Regular ER share (10% of ₱20k = ₱2,000)', `Got ${sss25k.regular_ss_employer}`);
+  assert(sss25k.wisp_employee === 250.0, 'SSS WISP EE share (5% of ₱5k excess = ₱250)', `Got ${sss25k.wisp_employee}`);
+  assert(sss25k.wisp_employer === 500.0, 'SSS WISP ER share (10% of ₱5k excess = ₱500)', `Got ${sss25k.wisp_employer}`);
   assert(sss25k.ec_employer === 30.0, 'SSS EC ER share (₱30 for MSC >= ₱15,000)', `Got ${sss25k.ec_employer}`);
-  assert(sss25k.total_employee_monthly === 1125.0, 'SSS Total EE Monthly = ₱1,125.00', `Got ${sss25k.total_employee_monthly}`);
-  assert(sss25k.total_employee_cutoff === 562.5, 'SSS Semi-monthly EE Cutoff = ₱562.50', `Got ${sss25k.total_employee_cutoff}`);
+  assert(sss25k.total_employee_monthly === 1250.0, 'SSS Total EE Monthly = ₱1,250.00', `Got ${sss25k.total_employee_monthly}`);
+  assert(sss25k.total_employee_cutoff === 625.0, 'SSS Semi-monthly EE Cutoff = ₱625.00', `Got ${sss25k.total_employee_cutoff}`);
 
-  // Test 1b: Salary ₱95,000 (Maximum MSC Cap ₱30,000)
+  // Test 1b: Salary ₱95,000 (Maximum MSC Cap ₱35,000)
   const sss95k = calculateSSSContribution(95000, true);
-  assert(sss95k.monthly_salary_credit === 30000, 'SSS Max MSC Cap ₱30,000', `Got ${sss95k.monthly_salary_credit}`);
-  assert(sss95k.total_employee_monthly === 1350.0, 'SSS Max EE Monthly = ₱1,350.00', `Got ${sss95k.total_employee_monthly}`);
-  assert(sss95k.total_employee_cutoff === 675.0, 'SSS Max EE Cutoff = ₱675.00', `Got ${sss95k.total_employee_cutoff}`);
+  assert(sss95k.monthly_salary_credit === 35000, 'SSS Max MSC Cap ₱35,000', `Got ${sss95k.monthly_salary_credit}`);
+  assert(sss95k.total_employee_monthly === 1750.0, 'SSS Max EE Monthly = ₱1,750.00', `Got ${sss95k.total_employee_monthly}`);
+  assert(sss95k.total_employee_cutoff === 875.0, 'SSS Max EE Cutoff = ₱875.00', `Got ${sss95k.total_employee_cutoff}`);
+
+  // Circular 2024-006: bracket boundaries, MPF split, and employer-only EC.
+  const officialRows = [
+    { salary: 5000, msc: 5000, ee: 250, er: 510 },
+    { salary: 5249.99, msc: 5000, ee: 250, er: 510 },
+    { salary: 5250, msc: 5500, ee: 275, er: 560 },
+    { salary: 14749.99, msc: 14500, ee: 725, er: 1460 },
+    { salary: 14750, msc: 15000, ee: 750, er: 1530 },
+    { salary: 20249.99, msc: 20000, ee: 1000, er: 2030 },
+    { salary: 20250, msc: 20500, ee: 1025, er: 2080 },
+    { salary: 25000, msc: 25000, ee: 1250, er: 2530 },
+    { salary: 34749.99, msc: 34500, ee: 1725, er: 3480 },
+    { salary: 34750, msc: 35000, ee: 1750, er: 3530 },
+    { salary: 95000, msc: 35000, ee: 1750, er: 3530 },
+  ];
+  for (const row of officialRows) {
+    const result = calculateSSSContribution(row.salary, false);
+    assert(result.monthly_salary_credit === row.msc && result.total_employee_monthly === row.ee && result.total_employer_monthly === row.er,
+      'SSS official 2025 schedule at monthly compensation ' + row.salary,
+      JSON.stringify(result));
+  }
+  assert(sss25k.total_employer_monthly === 2530 && sss25k.total_employer_cutoff === 1265, 'SSS employer share includes EC without charging it to the employee');
+  const sssMonthly = calculateSSSContribution(25000, false);
+  assert(sssMonthly.total_employee_cutoff === 1250 && sss25k.total_employee_cutoff === 625, 'SSS monthly and semi-monthly employee deductions');
 
   // ============================================================================
   // 2. PhilHealth UHC Contribution Tests (RA 11223)
@@ -92,6 +116,20 @@ export function runPhilippineComplianceTests(): { passed: number; failed: number
   const hdmfVol = calculatePagIbigContribution(45000, true, 300);
   assert(hdmfVol.employee_monthly === 500.0, 'Pag-IBIG EE with ₱300 voluntary = ₱500.00', `Got ${hdmfVol.employee_monthly}`);
   assert(hdmfVol.employee_cutoff === 250.0, 'Pag-IBIG EE Cutoff with voluntary = ₱250.00', `Got ${hdmfVol.employee_cutoff}`);
+
+  // Circular 460: the low-income boundary and salary cap affect employee and
+  // employer shares differently. Voluntary savings must not raise the ER share.
+  const hdmf1500 = calculatePagIbigContribution(1500, false);
+  const hdmf150001 = calculatePagIbigContribution(1500.01, false);
+  const hdmfCap = calculatePagIbigContribution(10000, false);
+  assert(hdmf1500.employee_monthly === 15 && hdmf1500.employer_monthly === 30,
+    'Pag-IBIG at 1,500 uses 1% employee and 2% employer shares');
+  assert(hdmf150001.employee_monthly === 30 && hdmf150001.employer_monthly === 30,
+    'Pag-IBIG above 1,500 uses 2% for both shares');
+  assert(hdmfCap.employee_monthly === 200 && hdmfCap.employer_monthly === 200,
+    'Pag-IBIG mandatory shares reach the cap at 10,000');
+  assert(hdmfVol.employer_monthly === 200 && hdmfVol.employer_cutoff === 100,
+    'Pag-IBIG voluntary employee savings do not increase the mandatory employer share');
 
   // ============================================================================
   // 4. BIR Revised Withholding Tax Tests (RA 10963 TRAIN Law)
@@ -179,18 +217,18 @@ export function runPhilippineComplianceTests(): { passed: number; failed: number
   if (engineResult.statutory_deductions) {
     const stat = engineResult.statutory_deductions;
     // Basic pay = 25,000.00
-    // SSS on 50k (MSC 30k capped) -> EE cutoff = 675.00
-    assert(stat.sss.total_employee_cutoff === 675.0, 'Engine SSS EE Cutoff = ₱675.00', `Got ${stat.sss.total_employee_cutoff}`);
+    // SSS on 50k (MSC 35k capped) -> EE cutoff = 875.00
+    assert(stat.sss.total_employee_cutoff === 875.0, 'Engine SSS EE Cutoff = ₱875.00', `Got ${stat.sss.total_employee_cutoff}`);
     // PhilHealth on 50k -> EE monthly = 1,250.00 -> EE cutoff = 625.00
     assert(stat.philhealth.employee_cutoff === 625.0, 'Engine PhilHealth EE Cutoff = ₱625.00', `Got ${stat.philhealth.employee_cutoff}`);
     // Pag-IBIG on 50k (cap 10k) -> EE cutoff = 100.00
     assert(stat.pagibig.employee_cutoff === 100.0, 'Engine Pag-IBIG EE Cutoff = ₱100.00', `Got ${stat.pagibig.employee_cutoff}`);
 
-    // Total mandatory contributions = 675 + 625 + 100 = 1,400.00
+    // Total mandatory contributions = 875 + 625 + 100 = 1,600.00
     // Taxable Income = Gross Pay - Mandatory Contributions
     // Gross Pay = Basic (25,000) + OT (4 hrs * 287.36 * 1.25 = 1436.80) = 26,436.80
-    // Taxable Income = 26,436.80 - 1,400.00 = 25,036.80
-    // Tax on 25,036.80 (Bracket 3: ₱937.50 + 20% on (25,036.80 - 16,667)) = 937.50 + 1673.96 = 2,611.46
+    // Taxable Income = 26,436.80 - 1,600.00 = 24,836.80
+    // Tax on 24,836.80 (Bracket 3: ₱937.50 + 20% on (24,836.80 - 16,667)) = 937.50 + 1633.96 = 2,571.46
     assert(stat.withholding_tax.tax_amount > 0, 'Engine BIR Withholding Tax calculated', `Got ${stat.withholding_tax.tax_amount}`);
     assert(stat.total_statutory_deductions > 0, 'Total Statutory Deductions calculated', `Got ${stat.total_statutory_deductions}`);
 

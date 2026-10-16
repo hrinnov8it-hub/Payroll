@@ -220,21 +220,14 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
                 <label className="input-label" style={{ margin: 0 }}>
                   Employee Number <span style={{ color: 'var(--brand-accent)' }}>*</span>
                 </label>
-                <button
+                <Button
+                  variant="ghost"
+                  size="xs"
                   type="button"
                   onClick={handleAutoGenerateNumber}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--brand-blue)',
-                    fontSize: '0.8rem',
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                    padding: 0,
-                  }}
                 >
                   Generate Suggestion
-                </button>
+                </Button>
               </div>
               <Input
                 placeholder="e.g. INV-2026-008"

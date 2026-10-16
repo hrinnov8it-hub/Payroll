@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { Button } from '@/components/ui/Button';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -52,9 +53,11 @@ export const Modal: React.FC<ModalProps> = ({
             <h3 className="modal-title">{title}</h3>
             {subtitle && <p className="modal-subtitle">{subtitle}</p>}
           </div>
-          <button
+          <Button
+            variant="outline"
+            size="xs"
+            iconOnly
             type="button"
-            className="modal-close-btn"
             onClick={onClose}
             aria-label="Close modal"
           >
@@ -62,7 +65,7 @@ export const Modal: React.FC<ModalProps> = ({
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
-          </button>
+          </Button>
         </div>
 
         <div className="modal-body">{children}</div>

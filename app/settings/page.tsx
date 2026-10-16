@@ -8,6 +8,7 @@ import { GeneralSettingsTab } from '@/components/settings/GeneralSettingsTab';
 import { RatesSettingsTab } from '@/components/settings/RatesSettingsTab';
 import { EarningsSettingsTab } from '@/components/settings/EarningsSettingsTab';
 import { DeductionsSettingsTab } from '@/components/settings/DeductionsSettingsTab';
+import { GovernmentBenefitsSettingsTab } from '@/components/settings/GovernmentBenefitsSettingsTab';
 import { SuperAdminSettingsTab } from '@/components/settings/SuperAdminSettingsTab';
 import { PayrollSettings, EarningType, DeductionType } from '@/types/payroll';
 import {
@@ -16,7 +17,7 @@ import {
   getDeductionTypes,
 } from '@/lib/payroll/settings-actions';
 
-type SettingsTab = 'general' | 'rates' | 'earnings' | 'deductions' | 'superadmin';
+type SettingsTab = 'general' | 'rates' | 'earnings' | 'deductions' | 'government-benefits' | 'superadmin';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
@@ -34,7 +35,7 @@ export default function SettingsPage() {
         if (typeof window !== 'undefined') {
           const params = new URLSearchParams(window.location.search);
           const tabParam = params.get('tab');
-          if (tabParam === 'superadmin' || tabParam === 'rates' || tabParam === 'earnings' || tabParam === 'deductions') {
+          if (tabParam === 'superadmin' || tabParam === 'rates' || tabParam === 'earnings' || tabParam === 'deductions' || tabParam === 'government-benefits') {
             setActiveTab(tabParam as SettingsTab);
           }
         }
@@ -65,9 +66,10 @@ export default function SettingsPage() {
           <div className="workspace-settings-nav-label">CONFIGURATION</div>
           {([
             { key: 'general', label: 'General settings', description: 'Company and pay schedules', icon: 'calendar' },
-            { key: 'rates', label: 'Rates & rules', description: 'Contribution and premium rates', icon: 'settings' },
+            { key: 'rates', label: 'Rates & rules', description: 'Overtime and premium rates', icon: 'settings' },
             { key: 'earnings', label: 'Earnings', description: 'Allowances and pay categories', icon: 'wallet', count: earnings.length },
             { key: 'deductions', label: 'Deductions', description: 'Loans and deduction categories', icon: 'document', count: deductions.length },
+            { key: 'government-benefits', label: 'Government mandated benefits', description: 'SSS, PhilHealth & Pag-IBIG', icon: 'shield' },
             { key: 'superadmin', label: 'Administration', description: 'Company and access controls', icon: 'shield' },
           ] as const).map(item => <button key={item.key} type="button" aria-pressed={activeTab === item.key} onClick={() => setActiveTab(item.key)}>
             <WorkspaceIcon name={item.icon} size={19} />
@@ -106,6 +108,10 @@ export default function SettingsPage() {
 
           {activeTab === 'deductions' && (
             <DeductionsSettingsTab initialDeductions={deductions} />
+          )}
+
+          {activeTab === 'government-benefits' && settings && (
+            <GovernmentBenefitsSettingsTab initialSettings={settings} onSaved={setSettings} />
           )}
 
           {activeTab === 'superadmin' && settings && (

@@ -49,7 +49,11 @@ export const TopNav: React.FC<TopNavProps> = ({
   return (
     <header className="topbar">
       <div className="topbar-left">
-        <button
+        <Button
+          variant="outline"
+          size="sm"
+          iconOnly
+          type="button"
           className="mobile-menu-btn"
           onClick={onToggleSidebar}
           aria-label="Toggle Navigation Menu"
@@ -59,7 +63,7 @@ export const TopNav: React.FC<TopNavProps> = ({
             <line x1="3" x2="21" y1="12" y2="12" />
             <line x1="3" x2="21" y1="18" y2="18" />
           </svg>
-        </button>
+        </Button>
         <div className="page-breadcrumb">
           <span>Innov8IT</span>
           <span>/</span>
@@ -99,7 +103,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           isLoading={isLoggingOut}
           title="Sign Out of Innov8IT Payroll"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '5px' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <polyline points="16 17 21 12 16 7" />
             <line x1="21" y1="12" x2="9" y2="12" />

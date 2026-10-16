@@ -29,14 +29,7 @@
   .workspace-header-actions { display: flex; gap: 10px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
   .workspace-header-actions > div { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .workspace-back { display: inline-flex; align-items: center; gap: 8px; color: #54838d; font-size: 12px; margin-bottom: 15px; }
-  .workspace-page .btn { border-radius: 8px; font-size: 12px; min-height: 38px; padding: 9px 14px; font-weight: 600; transition: background-color 150ms, border-color 150ms; }
-  .workspace-page .btn-primary { box-shadow: 0 3px 5px #399ca21a; }
-  .workspace-page .btn-primary:hover { box-shadow: none; }
-  .workspace-page .btn-outline { background: white; border-color: #d8e2e9; color: #3d566b; }
-  .workspace-page .btn-xs { font-size: 11px; padding: 5px 9px; min-height: 29px; border-radius: 6px; }
-  .workspace-page .btn-sm { font-size: 12px; min-height: 36px; }
-  .workspace-page .btn-lg { min-height: 44px; font-size: 14px; }
-  .workspace-page .btn:focus-visible, .workspace-page a:focus-visible, .workspace-page button:focus-visible { outline: 2px solid #399ca2; outline-offset: 3px; }
+  .workspace-page a:focus-visible, .workspace-page button:focus-visible { outline: 2px solid #399ca2; outline-offset: 3px; }
   .workspace-stats { display: grid; grid-template-columns: repeat(var(--workspace-columns), minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
   .workspace-stat { background: white; border: 1px solid #e6ecf1; border-radius: 12px; padding: 18px 20px; min-width: 0; }
   .workspace-stat-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; color: #65778a; font-size: 12px; font-weight: 500; }
@@ -102,6 +95,7 @@
   .workspace-filter-title { display: flex; align-items: center; gap: 8px; color: #40596e; font-size: 12px; font-weight: 600; margin-bottom: 3px; }
   .workspace-report-employee-filter { flex-wrap: wrap; }
   .workspace-page .table-responsive { overflow-x: auto; max-width: 100%; }
+  .workspace-page .approval-action-row .btn { white-space: normal; text-align: center; }
   .workspace-page .workflow-steps { gap: 8px; padding: 8px 0 14px; }
   .workspace-page .workflow-step { text-transform: none; font-weight: 600; font-size: 12px; letter-spacing: 0; border-radius: 7px; padding: 8px 12px; }
   .workspace-page .workflow-step.active { color: #287c82; background: #eaf6f5; box-shadow: 0 0 0 1px #c6e3e3; }
@@ -118,7 +112,7 @@
   .workspace-page .reports-filter-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); flex: 1; gap: 16px; }
   .workspace-page .reports-filter-select, .workspace-page .reports-search-input { width: 100%; min-width: 0; }
   .workspace-page .reports-tabs-nav { display: flex; flex-wrap: nowrap; gap: 5px; background: white; border: 1px solid #e6ecf1; border-radius: 11px; padding: 7px; overflow-x: auto; margin-bottom: 22px; }
-  .workspace-page .reports-tab-btn { flex-shrink: 0; border: 0; border-radius: 7px; display: inline-flex; align-items: center; gap: 8px; padding: 10px 13px; font-size: 12px; color: #64748b; font-weight: 500; white-space: nowrap; }
+  .workspace-page .reports-tab-btn { min-height: 36px; line-height: 1.4; transition: background-color 150ms, color 150ms; flex-shrink: 0; border: 0; border-radius: 7px; display: inline-flex; align-items: center; gap: 8px; padding: 10px 13px; font-size: 12px; color: #64748b; font-weight: 500; white-space: nowrap; }
   .workspace-page .reports-tab-btn:hover { background: #f8fafb; }
   .workspace-page .reports-tab-btn.active { background: #eaf6f5; color: #287c82; border: 0; box-shadow: none; }
   .workspace-page .reports-tab-badge { border-radius: 5px; font-size: 10px; background: #f0f4f6; color: #64748b; }

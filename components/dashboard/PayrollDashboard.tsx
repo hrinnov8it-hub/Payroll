@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import type { PayrollRun, PayrollRunStatus } from '@/types/payroll';
 import type { PayrollPeriod } from '@/types/attendance';
 import type { Employee } from '@/types/employee';
@@ -95,12 +95,12 @@ export function PayrollDashboard({ runs, periods, employees, loading, error, onR
       <header className={styles.header}>
         <div><div className={styles.eyebrow}>YOUR WORKSPACE, AT A GLANCE</div><h1>Payroll overview</h1><p>Keep your people, pay cycles, and payouts in view.</p></div>
         <div className={styles.headerActions}>
-          <Link href="/reports" className={styles.outlineLink}><Icon name="document" size={17} />View reports</Link>
+          <ButtonLink href="/reports" variant="outline"><Icon name="document" size={17} />View reports</ButtonLink>
           <Button onClick={onNewPayroll} disabled={loading || periods.length === 0} leftIcon={<Icon name="plus" size={18} />}>New payroll run</Button>
         </div>
       </header>
 
-      {error && <div role="alert" className={styles.error}><span>{error}</span><button onClick={onRefresh}>Try again</button></div>}
+      {error && <div role="alert" className={styles.error}><span>{error}</span><Button variant="danger-outline" size="xs" onClick={onRefresh}>Try again</Button></div>}
 
       <section className={styles.metrics} aria-label="Payroll summary">
         {metrics.map(metric => <article className={styles.metric} key={metric.label}>
@@ -135,7 +135,7 @@ export function PayrollDashboard({ runs, periods, employees, loading, error, onR
 
       <div className={styles.bottomGrid}>
         <section className={styles.runs} aria-labelledby="payroll-runs-heading">
-          <div className={styles.runsHeader}><div><h2 id="payroll-runs-heading">Payroll runs <span className={styles.count}>{loading ? '—' : runs.length}</span></h2><p>Your recent calculations and their current status.</p></div><button className={styles.refresh} onClick={onRefresh} disabled={loading} aria-label="Refresh payroll data"><Icon name="refresh" size={17} /></button></div>
+          <div className={styles.runsHeader}><div><h2 id="payroll-runs-heading">Payroll runs <span className={styles.count}>{loading ? '—' : runs.length}</span></h2><p>Your recent calculations and their current status.</p></div><Button variant="outline" size="xs" iconOnly onClick={onRefresh} disabled={loading} aria-label="Refresh payroll data"><Icon name="refresh" size={17} /></Button></div>
           <div className={styles.tableTools}>
             <div className={styles.filters} role="group" aria-label="Filter payroll runs">
               {([{ key: 'all', label: 'All runs', count: runs.length }, { key: 'review', label: 'In review', count: inReview }, { key: 'progress', label: 'In progress', count: inProgress }, { key: 'completed', label: 'Completed', count: completed }] as const).map(item => <button key={item.key} aria-pressed={filter === item.key} className={filter === item.key ? styles.activeFilter : ''} onClick={() => { setFilter(item.key); setPage(1); }}>{item.label}<span>{loading ? '—' : item.count}</span></button>)}
@@ -149,12 +149,12 @@ export function PayrollDashboard({ runs, periods, employees, loading, error, onR
                 <td><span className={styles.employeeCount}><Icon name="people" size={15} />{run.total_employees}</span></td>
                 <td className={`${styles.numeric} ${styles.runAmount}`}>{money(Number(run.total_net_pay || 0))}</td>
                 <td><RunStatus status={run.status} /></td>
-                <td><Link href={`/payroll-runs/${run.id}`} className={styles.openRun} aria-label={`Open ${run.run_number}`}><Icon name="arrow" size={17} /></Link></td>
+                <td><ButtonLink href={`/payroll-runs/${run.id}`} variant="outline" size="xs" iconOnly aria-label={`Open ${run.run_number}`}><Icon name="arrow" size={17} /></ButtonLink></td>
               </tr>)}</tbody>
             </table>
           </div>
-          {!loading && filteredRuns.length === 0 && <div className={styles.empty}><span className={styles.emptyIcon}><Icon name="document" size={26} /></span><h3>{runs.length ? 'No matching payroll runs' : 'Ready for your first payroll?'}</h3><p>{runs.length ? 'Try another search or choose a different status.' : 'Create a run to calculate salaries and track your team’s payouts.'}</p>{runs.length ? <button onClick={() => { setSearch(''); setFilter('all'); setPage(1); }}>Clear filters</button> : <Button size="sm" onClick={onNewPayroll} disabled={periods.length === 0}>Create payroll run</Button>}</div>}
-          <div className={styles.tableFooter}><span role="status">{loading ? 'Loading payroll runs…' : filteredRuns.length ? `Showing ${(currentPage - 1) * 5 + 1}–${Math.min(currentPage * 5, filteredRuns.length)} of ${filteredRuns.length} runs` : '0 runs to display'}</span><div className={styles.pagination}><button disabled={loading || currentPage === 1} onClick={() => setPage(currentPage - 1)} aria-label="Previous page">‹</button><span>{currentPage} / {pageCount}</span><button disabled={loading || currentPage === pageCount} onClick={() => setPage(currentPage + 1)} aria-label="Next page">›</button></div></div>
+          {!loading && filteredRuns.length === 0 && <div className={styles.empty}><span className={styles.emptyIcon}><Icon name="document" size={26} /></span><h3>{runs.length ? 'No matching payroll runs' : 'Ready for your first payroll?'}</h3><p>{runs.length ? 'Try another search or choose a different status.' : 'Create a run to calculate salaries and track your team’s payouts.'}</p>{runs.length ? <Button variant="ghost" size="xs" onClick={() => { setSearch(''); setFilter('all'); setPage(1); }}>Clear filters</Button> : <Button size="sm" onClick={onNewPayroll} disabled={periods.length === 0}>Create payroll run</Button>}</div>}
+          <div className={styles.tableFooter}><span role="status">{loading ? 'Loading payroll runs…' : filteredRuns.length ? `Showing ${(currentPage - 1) * 5 + 1}–${Math.min(currentPage * 5, filteredRuns.length)} of ${filteredRuns.length} runs` : '0 runs to display'}</span><div className={styles.pagination}><Button variant="outline" size="xs" iconOnly disabled={loading || currentPage === 1} onClick={() => setPage(currentPage - 1)} aria-label="Previous page">‹</Button><span>{currentPage} / {pageCount}</span><Button variant="outline" size="xs" iconOnly disabled={loading || currentPage === pageCount} onClick={() => setPage(currentPage + 1)} aria-label="Next page">›</Button></div></div>
         </section>
 
         <aside className={styles.aside}>

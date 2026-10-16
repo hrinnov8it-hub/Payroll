@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { PayrollRunItem } from '@/types/payroll';
 import { getItemizedDeductions } from '@/lib/payroll/item-deductions';
 
@@ -38,11 +37,9 @@ export const PayrollSnapshotModal: React.FC<PayrollSnapshotModalProps> = ({
       footer={
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           {runId ? (
-            <Link href={`/payroll-runs/${runId}`}>
-              <Button variant="outline" size="sm">
-                Open Full Run Details →
-              </Button>
-            </Link>
+            <ButtonLink href={`/payroll-runs/${runId}`} variant="outline" size="sm">
+              Open Full Run Details →
+            </ButtonLink>
           ) : <div />}
           <Button variant="outline" size="sm" onClick={onClose}>
             Close
@@ -55,24 +52,16 @@ export const PayrollSnapshotModal: React.FC<PayrollSnapshotModalProps> = ({
         {items.length > 1 && (
           <div style={{ marginBottom: '1.25rem', display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
             {items.map((it, idx) => (
-              <button
+              <Button
+                size="sm"
+                variant={idx === selectedIndex ? "soft" : "outline"}
+                aria-pressed={idx === selectedIndex}
                 key={it.id}
                 type="button"
                 onClick={() => setSelectedIndex(idx)}
-                style={{
-                  padding: '0.4rem 0.85rem',
-                  borderRadius: '9999px',
-                  border: idx === selectedIndex ? '1px solid var(--brand-blue)' : '1px solid #e2e8f0',
-                  background: idx === selectedIndex ? '#eff6ff' : '#f8fafc',
-                  color: idx === selectedIndex ? 'var(--brand-blue)' : '#475569',
-                  fontWeight: idx === selectedIndex ? 700 : 500,
-                  fontSize: '0.82rem',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
               >
                 {it.employee_name_snapshot}
-              </button>
+              </Button>
             ))}
           </div>
         )}

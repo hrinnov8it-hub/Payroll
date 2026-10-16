@@ -1,18 +1,43 @@
 import React from 'react';
+import Link from 'next/link';
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'dark' | 'accent' | 'outline' | 'ghost' | 'danger' | 'success';
+interface ButtonStyleProps {
+  variant?: 'primary' | 'dark' | 'accent' | 'outline' | 'ghost' | 'danger' | 'danger-outline' | 'success' | 'inverse' | 'soft';
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   fullWidth?: boolean;
-  isLoading?: boolean;
+  iconOnly?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
+
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, ButtonStyleProps {
+  isLoading?: boolean;
+}
+
+const buttonClasses = ({ variant = 'primary', size = 'md', fullWidth, iconOnly, className = '' }: ButtonStyleProps & { className?: string }) =>
+  ['btn', `btn-${variant}`, size !== 'md' && `btn-${size}`, fullWidth && 'btn-block', iconOnly && 'btn-icon-only', className].filter(Boolean).join(' ');
+
+const ButtonContent = ({ leftIcon, rightIcon, children }: Pick<ButtonStyleProps, 'leftIcon' | 'rightIcon'> & { children?: React.ReactNode }) => (
+  <>
+    {leftIcon && <span className="btn-icon-left">{leftIcon}</span>}
+    {children != null && <span className="btn-label">{children}</span>}
+    {rightIcon && <span className="btn-icon-right">{rightIcon}</span>}
+  </>
+);
+
+export type ButtonLinkProps = React.ComponentProps<typeof Link> & ButtonStyleProps;
+
+export const ButtonLink: React.FC<ButtonLinkProps> = ({ variant, size, fullWidth, iconOnly, leftIcon, rightIcon, className, children, ...props }) => (
+  <Link className={buttonClasses({ variant, size, fullWidth, iconOnly, className })} {...props}>
+    <ButtonContent leftIcon={leftIcon} rightIcon={rightIcon}>{children}</ButtonContent>
+  </Link>
+);
 
 export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   size = 'md',
   fullWidth = false,
+  iconOnly = false,
   isLoading = false,
   leftIcon,
   rightIcon,
@@ -21,20 +46,15 @@ export const Button: React.FC<ButtonProps> = ({
   children,
   ...props
 }) => {
-  const variantClass = `btn-${variant}`;
-  const sizeClass = size !== 'md' ? `btn-${size}` : '';
-  const blockClass = fullWidth ? 'btn-block' : '';
-
-  const classes = ['btn', variantClass, sizeClass, blockClass, className]
-    .filter(Boolean)
-    .join(' ');
+  const classes = buttonClasses({ variant, size, fullWidth, iconOnly, className });
 
   return (
-    <button className={classes} disabled={disabled || isLoading} {...props}>
+    <button className={classes} disabled={disabled || isLoading} aria-busy={isLoading || undefined} {...props}>
       {isLoading ? (
         <>
           <svg
-            style={{ width: '1em', height: '1em', animation: 'spin 1s linear infinite' }}
+            className="btn-spinner"
+            aria-hidden="true"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -46,14 +66,10 @@ export const Button: React.FC<ButtonProps> = ({
               strokeLinecap="round"
             />
           </svg>
-          <span>Loading...</span>
+          {!iconOnly && <span className="btn-label">Loading...</span>}
         </>
       ) : (
-        <>
-          {leftIcon && <span className="btn-icon-left">{leftIcon}</span>}
-          {children && <span>{children}</span>}
-          {rightIcon && <span className="btn-icon-right">{rightIcon}</span>}
-        </>
+        <ButtonContent leftIcon={leftIcon} rightIcon={rightIcon}>{children}</ButtonContent>
       )}
     </button>
   );

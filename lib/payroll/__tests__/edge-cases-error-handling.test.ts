@@ -119,14 +119,14 @@ export async function runEdgeCasesAndErrorHandlingTests(): Promise<{ passed: num
   const execSalary = 500000;
   const sssExec = calculateSSSContribution(execSalary);
   assert(
-    sssExec.total_employee_monthly === 1350,
-    'Executive ₱500k SSS employee share capped at maximum ₱1,350.00 (₱30k MSC ceiling)',
-    `Expected 1350, got ${sssExec.total_employee_monthly}`
+    sssExec.total_employee_monthly === 1750,
+    'Executive ₱500k SSS employee share capped at maximum ₱1,750.00 (₱35k MSC ceiling)',
+    `Expected 1750, got ${sssExec.total_employee_monthly}`
   );
   assert(
-    sssExec.monthly_salary_credit === 30000,
-    'Executive ₱500k MSC capped at ₱30,000.00',
-    `Expected 30000, got ${sssExec.monthly_salary_credit}`
+    sssExec.monthly_salary_credit === 35000,
+    'Executive ₱500k MSC capped at ₱35,000.00',
+    `Expected 35000, got ${sssExec.monthly_salary_credit}`
   );
 
   const philhealthExec = calculatePhilHealthContribution(execSalary);
@@ -144,7 +144,7 @@ export async function runEdgeCasesAndErrorHandlingTests(): Promise<{ passed: num
   );
 
   // Executive semi-monthly taxable gross ~ ₱250,000 -> Top tax bracket
-  const semiMonthlyTaxable = 250000 - (1350 / 2 + 2500 / 2 + 200 / 2);
+  const semiMonthlyTaxable = 250000 - (1750 / 2 + 2500 / 2 + 200 / 2);
   const taxExec = calculateWithholdingTax(semiMonthlyTaxable);
   assert(
     taxExec.tax_amount > 50000,

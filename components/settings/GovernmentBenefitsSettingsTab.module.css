@@ -1,0 +1,26 @@
+.content { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.toggle { display: flex; align-items: center; gap: 13px; cursor: pointer; padding: 17px; border: 1px solid #dcebed; border-radius: 9px; background: #f8fcfc; }
+.toggle input { width: 19px; height: 19px; flex-shrink: 0; accent-color: #2f8388; cursor: pointer; }
+.toggle input:focus-visible { outline: 2px solid #399ca2; outline-offset: 3px; }
+.toggle > span:nth-child(2) { flex: 1; min-width: 0; }
+.toggle strong { display: block; color: #17324d; font-size: 13px; font-weight: 600; }
+.toggle small { display: block; color: #64748b; font-size: 12px; line-height: 1.6; margin-top: 4px; }
+.enabled, .disabled { font-size: 10px; font-weight: 600; border-radius: 5px; padding: 5px 8px; flex-shrink: 0; }
+.enabled { background: #e1f1ec; color: #39795e; }
+.disabled { background: #edf1f4; color: #62778a; }
+.note { color: #64748b; font-size: 12px; line-height: 1.7; margin-top: 13px; }
+.rules section + section { margin-top: 22px; padding-top: 22px; border-top: 1px solid #edf1f4; }
+.agency { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 9px; }
+.agency strong { color: #17324d; font-size: 14px; }
+.agency span { font-size: 10px; color: #287c82; background: #eaf6f5; padding: 4px 7px; border-radius: 5px; }
+.rules p { font-size: 12px; line-height: 1.8; color: #52697b; margin-bottom: 7px; }
+.rules b { font-weight: 600; color: #314f65; }
+.rules a { display: inline-flex; margin-top: 4px; font-size: 12px; font-weight: 600; color: #2f8388; text-decoration: underline; text-underline-offset: 3px; }
+.salary { display: grid; grid-template-columns: minmax(180px, 280px) minmax(0, 1fr); align-items: center; gap: 24px; margin-bottom: 16px; }
+.salary .note { margin: 0; }
+.preview { min-width: 650px; }
+.preview td, .preview thead th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.content .preview tbody th, .content .preview tfoot th { background: white; color: #3f5a6f; font-size: 12px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+.content .preview tfoot td, .content .preview tfoot th { background: #f2f8f8; border-top: 1px solid #dcebed; font-weight: 600; }
+.caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 760px) { .salary { grid-template-columns: 1fr; gap: 0; }.toggle { flex-wrap: wrap; }.toggle > span:nth-child(2) { flex-basis: calc(100% - 40px); }.toggle > span:last-child { margin-left: 32px; } }

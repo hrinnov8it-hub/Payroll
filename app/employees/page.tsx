@@ -7,7 +7,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader, WorkspaceStats, WorkspaceStat, PanelHeading } from '@/components/ui/Workspace';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import {
   Table,
   TableBody,
@@ -110,13 +110,13 @@ export default function EmployeesPage() {
       <PageHeader eyebrow="PEOPLE & ORGANIZATION" title="Employee directory" description="Manage your team, department assignments, and pay details." actions={<>
 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <Button variant="outline" size="sm" onClick={() => loadData()}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
             </svg>
             Refresh
           </Button>
           <Button variant="primary" size="sm" onClick={() => router.push('/employees/new')}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="16" />
               <line x1="8" y1="12" x2="16" y2="12" />
@@ -243,22 +243,18 @@ export default function EmployeesPage() {
                       <TableCell>{getStatusBadge(emp.status)}</TableCell>
                       <TableCell align="center">
                         <div style={{ display: 'inline-flex', gap: '0.35rem', alignItems: 'center' }}>
-                          <Link href={`/employees/${emp.id}`}>
-                            <Button variant="ghost" size="sm" title="View Profile">
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
-                              </svg>
-                            </Button>
-                          </Link>
-                          <Link href={`/employees/${emp.id}/edit`}>
-                            <Button variant="ghost" size="sm" title="Edit Employee">
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                              </svg>
-                            </Button>
-                          </Link>
+                          <ButtonLink href={`/employees/${emp.id}`} variant="outline" size="sm" iconOnly aria-label={`View ${emp.first_name} ${emp.last_name}`} title="View Profile">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
+                          </ButtonLink>
+                          <ButtonLink href={`/employees/${emp.id}/edit`} variant="outline" size="sm" iconOnly aria-label={`Edit ${emp.first_name} ${emp.last_name}`} title="Edit Employee">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                          </ButtonLink>
                         </div>
                       </TableCell>
                     </TableRow>

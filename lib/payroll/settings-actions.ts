@@ -39,6 +39,7 @@ const SUPABASE_PAYROLL_SETTINGS_COLUMNS = new Set([
   'standard_working_days_per_year',
   'standard_hours_per_day',
   'grace_period_late_minutes',
+  'enable_statutory_deductions',
   // Statutory & Signatory fields — will be saved to DB once schema is migrated
   'tin_number',
   'sss_employer_id',
@@ -172,8 +173,47 @@ export async function getPayrollSettings(): Promise<PayrollSettings> {
 }
 
 /**
- * Update payroll settings
+ * Save the government-benefit toggle and verify that Supabase stored it.
  */
+export async function updateStatutoryDeductionSetting(
+  enabled: boolean
+): Promise<{ success: boolean; data?: PayrollSettings; error?: string }> {
+  try {
+    const supabase = createClient();
+    // The existing SSR client version infers mutation tables as never with the
+    // installed SDK. Keep this compatibility cast scoped to this table.
+    const settingsTable = supabase.from('payroll_settings') as any;
+    const { data: current, error: loadError } = await settingsTable
+      .select('id')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (loadError || !current) {
+      return { success: false, error: 'Unable to load the saved payroll configuration. Please reload and try again.' };
+    }
+
+    // Only change this tab's field. Report a failed database write instead of
+    // displaying success for a value that exists only in the browser cache.
+    const { data, error } = await settingsTable
+      .update({ enable_statutory_deductions: enabled, updated_at: new Date().toISOString() })
+      .eq('id', current.id)
+      .select('*')
+      .single();
+
+    if (error || !data || data.enable_statutory_deductions !== enabled) {
+      return { success: false, error: 'Government benefit settings were not saved. Please try again.' };
+    }
+
+    const saved: PayrollSettings = { ...loadLocalSettings(), ...(data as Partial<PayrollSettings>) };
+    persistLocalSettings(saved);
+    return { success: true, data: saved };
+  } catch {
+    return { success: false, error: 'Unable to connect to save government benefit settings.' };
+  }
+}
+
+/** Update the general payroll configuration. */
 export async function updatePayrollSettings(
   data: Partial<PayrollSettings>
 ): Promise<{ success: boolean; data?: PayrollSettings; error?: string }> {

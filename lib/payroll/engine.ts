@@ -32,7 +32,7 @@ import { calculateWithholdingTax } from './ph-tax-withholding';
  * - Gross Pay
  * - Tardiness (late & undertime) and absence deductions
  * - Philippine Statutory Deductions (Phase 11):
- *   * SSS (RA 11199 EE 4.5%, ER 9.5%, MSC, WISP, EC Fund)
+ *   * SSS (Circular 2024-006 EE 5%, ER 10%, MSC, MPF, employer-only EC)
  *   * PhilHealth (RA 11223 UHC EE 2.5%, ER 2.5%, Floor 10k, Ceiling 100k)
  *   * Pag-IBIG (RA 9679 & Circular 460 EE 2.0%, ER 2.0%, Cap 10k)
  *   * BIR Withholding Tax (RA 10963 TRAIN Law Revised Withholding Tax tables)

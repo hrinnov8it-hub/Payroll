@@ -852,7 +852,7 @@ export default function ReportsPage() {
                         <h3 className="reports-table-title" style={{ marginTop: '0.35rem' }}>
                           Social Security System (SSS) & WISP Remittance Roster
                         </h3>
-                        <span className="reports-table-subtitle">RA 11199: 4.5% EE Share, 9.5% ER Share, EC Fund, and WISP breakdown</span>
+                        <span className="reports-table-subtitle">SSS Circular 2024-006: 5% employee share, 10% employer share, employer-only EC, and mandatory provident fund</span>
                       </div>
                       <div className="reports-mono" style={{ fontWeight: 800, color: '#0369a1', fontSize: '1.05rem' }}>
                         Total: {formatPHP(govtReport.totals.total_sss)}

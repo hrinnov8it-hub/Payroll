@@ -4,10 +4,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
-import { PageHeader, WorkspaceStats, WorkspaceStat, PanelHeading } from '@/components/ui/Workspace';
+import { PageHeader, WorkspaceStats, WorkspaceStat, PanelHeading, WorkspaceIcon } from '@/components/ui/Workspace';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
@@ -172,8 +172,8 @@ export default function PayrollRunsPage() {
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
-              style={{ marginRight: '6px' }}
-            >
+
+           >
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
@@ -329,21 +329,20 @@ export default function PayrollRunsPage() {
                             onClick={() => handleOpenSnapshot(run)}
                             isLoading={isSnapshotLoading === run.id}
                             title="View granular snapshot breakdown"
+                            leftIcon={<WorkspaceIcon name="eye" size={16} />}
                           >
-                            👁️ View Snapshot
+                            View Snapshot
                           </Button>
-                          <Link href={`/payroll-runs/${run.id}`}>
-                            <Button variant="outline" size="sm" title="View run details and approval chain">
-                              Details
-                            </Button>
-                          </Link>
+                          <ButtonLink href={`/payroll-runs/${run.id}`} variant="outline" size="sm" title="View run details and approval chain">
+                            Details
+                          </ButtonLink>
                           <Button
-                            variant="outline"
+                            variant="danger-outline"
                             size="sm"
                             onClick={() => setRunToDelete(run)}
-                            style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+                            leftIcon={<WorkspaceIcon name="trash" size={16} />}
                           >
-                            🗑️ Delete
+                            Delete
                           </Button>
                         </div>
                       </TableCell>
@@ -434,11 +433,11 @@ export default function PayrollRunsPage() {
                 Cancel
               </Button>
               <Button
-                variant="primary"
+                variant="danger"
                 size="sm"
                 onClick={handleDeleteConfirm}
                 isLoading={isDeleting}
-                style={{ backgroundColor: '#dc2626', borderColor: '#dc2626' }}
+
               >
                 Delete Payroll Run
               </Button>

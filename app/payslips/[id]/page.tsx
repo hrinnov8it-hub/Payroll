@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/ui/Workspace';
 import { usePortalUser } from '@/lib/auth/use-portal-user';
-import { Button } from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { PayslipDocument } from '@/components/payslips/PayslipDocument';
@@ -122,7 +121,7 @@ export default function PayslipDetailPage() {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-              >
+             >
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
@@ -150,9 +149,7 @@ export default function PayslipDetailPage() {
               restricted to their own individual payslip records.
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
-              <Link href="/payslips">
-                <Button variant="primary">Return to My Payslips</Button>
-              </Link>
+              <ButtonLink href="/payslips" variant="primary">Return to My Payslips</ButtonLink>
             </div>
           </div>
         ) : payslip ? (

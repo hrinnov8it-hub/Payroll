@@ -165,6 +165,7 @@ export interface Database {
           standard_working_days_per_year: number;
           standard_hours_per_day: number;
           grace_period_late_minutes: number;
+          enable_statutory_deductions: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -190,6 +191,7 @@ export interface Database {
           standard_working_days_per_year?: number;
           standard_hours_per_day?: number;
           grace_period_late_minutes?: number;
+          enable_statutory_deductions?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -215,6 +217,7 @@ export interface Database {
           standard_working_days_per_year?: number;
           standard_hours_per_day?: number;
           grace_period_late_minutes?: number;
+          enable_statutory_deductions?: boolean;
           updated_at?: string;
         };
         Relationships: [];

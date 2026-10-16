@@ -425,7 +425,7 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
               size="sm"
               onClick={() => setIsAddModalOpen(true)}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
@@ -580,23 +580,20 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
                             </select>
 
                             {!isDesignatedHR && (
-                              <button
+                              <Button
+                                variant="danger-outline"
+                                size="xs"
+                                iconOnly
+                                aria-label={`Revoke admin access for ${admin.email}`}
                                 type="button"
                                 onClick={() => handleDeleteAdmin(admin.id, admin.email)}
                                 title="Revoke Admin Access"
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  color: 'var(--danger)',
-                                  cursor: 'pointer',
-                                  padding: '4px',
-                                }}
                               >
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <polyline points="3 6 5 6 21 6" />
                                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                                 </svg>
-                              </button>
+                              </Button>
                             )}
                           </div>
                         </td>
@@ -738,9 +735,9 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
                 size="sm"
                 onClick={handleForceSync}
                 isLoading={isSyncing}
-                style={{ width: '100%' }}
+                fullWidth
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
                 </svg>
                 Force Supabase Cloud Re-Sync
@@ -774,9 +771,9 @@ export const SuperAdminSettingsTab: React.FC<SuperAdminSettingsTabProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={handleExportBackup}
-                style={{ width: '100%' }}
+                fullWidth
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
